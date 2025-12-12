@@ -3,43 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bar Chart Race - Vertical</title>
+    <title>Bar Chart Race - Ultra Fluid</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
-        /* Custom smooth transition classes */
+        /* --- Transiciones Suaves --- */
         .bar-transition {
             transition-property: top, width, opacity, background-color;
             transition-timing-function: linear;
         }
         
-        /* Ocultar barra de scroll en el editor */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
+        /* --- Scrollbar Oculta --- */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* --- NUEVA ANIMACIÓN DE FONDO VIBRANTE --- */
+        @keyframes gradient-flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+
+        /* Fondo Oscuro Tech (Cuerpo de la página) */
+        .tech-bg-dark {
+            background-color: #0f172a;
+            background-image: radial-gradient(#312e81 1px, transparent 1px), radial-gradient(#312e81 1px, #0f172a 1px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+        }
+
+        /* Fondo VISUALMENTE ATRACTIVO (Interior del móvil) */
+        .visual-bg-vibrant {
+            /* Opción mejorada: Aurora Neon con alto contraste */
+            background: linear-gradient(-45deg, #FF3CAC, #2B86C5, #784BA0, #FF3CAC);
+            background-size: 400% 400%;
+            animation: gradient-flow 15s ease infinite;
         }
     </style>
 </head>
-<body class="min-h-screen bg-neutral-900 text-slate-100 font-sans p-4 flex flex-col items-center justify-center">
+<!-- Aplicamos fondo tech oscuro al cuerpo -->
+<body class="min-h-screen tech-bg-dark text-slate-100 font-sans py-8 px-4 flex flex-col items-center justify-center">
 
     <!-- Header -->
-    <div class="w-full max-w-[400px] mb-4 flex justify-between items-center pb-2">
-        <h1 class="text-xl font-bold text-slate-100">Bar Chart Race</h1>
-        <button id="toggle-editor-btn" class="flex items-center gap-2 text-xs text-indigo-300 hover:text-indigo-100 transition-colors font-medium bg-indigo-900/50 px-3 py-2 rounded-lg border border-indigo-700">
+    <div class="w-full max-w-[400px] mb-4 flex justify-between items-center pb-2 z-10">
+        <h1 class="text-xl font-bold text-slate-100 drop-shadow-md tracking-wide">Bar Chart Race</h1>
+        <button id="toggle-editor-btn" class="flex items-center gap-2 text-xs text-indigo-100 hover:text-white transition-colors font-medium bg-slate-800/50 backdrop-blur-md px-3 py-2 rounded-lg border border-slate-700/50">
             <i data-lucide="settings" class="w-3.5 h-3.5"></i>
             <span id="editor-btn-text">Datos</span>
         </button>
     </div>
 
     <!-- Editor Modal (Hidden by default) -->
-    <div id="editor-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-        <div class="w-full max-w-4xl bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[90vh] flex flex-col text-slate-800">
+    <div id="editor-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="w-full max-w-4xl bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[90vh] flex flex-col text-slate-800">
             <div class="p-4 bg-indigo-900 text-white flex justify-between items-center shrink-0">
                 <h3 class="font-bold flex items-center gap-2"><i data-lucide="settings" class="w-5 h-5"></i> Configuración</h3>
                 <button id="close-editor-btn" class="hover:text-indigo-200 text-xl font-bold">&times;</button>
@@ -72,54 +91,55 @@
     </div>
 
     <!-- Main Visualization Area (9:16 Aspect Ratio) -->
-    <div class="w-full max-w-[400px] aspect-[9/16] bg-white rounded-[2rem] shadow-2xl overflow-hidden relative border-8 border-neutral-800">
+    <!-- CAMBIO: Fondo visual-bg-vibrant -->
+    <div class="w-full max-w-[400px] aspect-[9/16] visual-bg-vibrant rounded-[2.5rem] shadow-2xl overflow-hidden relative border-8 border-slate-900 ring-4 ring-slate-800/50">
         
-        <!-- Internal Header inside phone -->
-        <div class="absolute top-0 left-0 right-0 p-6 z-20 bg-gradient-to-b from-white via-white/80 to-transparent pointer-events-none">
-            <h2 id="chart-title" class="text-2xl font-black text-indigo-900 leading-tight">Valor de Marca Global</h2>
-            <p id="chart-subtitle" class="text-slate-500 font-medium">En millones de USD</p>
+        <!-- Internal Header inside phone (Transparente para ver el fondo) -->
+        <div class="absolute top-5 left-0 right-0 px-8 py-6 z-20 pointer-events-none flex justify-end">
+            <span id="year-display" class="text-7xl font-black text-white/90 tracking-tighter transition-all duration-300 drop-shadow-lg" style="text-shadow: 0 4px 12px rgba(0,0,0,0.2);">2000</span>
         </div>
 
-        <!-- Year Background -->
-        <div class="absolute bottom-20 right-6 select-none pointer-events-none z-0">
-            <span id="year-display" class="text-8xl font-black text-slate-100 tracking-tighter transition-all duration-300">2000</span>
+        <!-- Background Title (Moved to bottom) -->
+        <div class="absolute bottom-24 left-6 right-6 select-none pointer-events-none z-0 text-right">
+            <h2 id="chart-title" class="text-3xl font-black text-white leading-tight drop-shadow-md">Valor de Marca Global</h2>
+            <p id="chart-subtitle" class="text-lg text-white/80 font-medium drop-shadow-sm">En millones de USD</p>
         </div>
 
         <!-- Chart Area Container -->
-        <div id="chart-container" class="relative w-full h-full p-4 pt-24 z-10 box-border">
+        <div id="chart-container" class="relative w-full h-full px-6 pb-4 pt-36 z-10 box-border">
             <!-- Bars will be injected here by JS -->
         </div>
 
         <!-- Timeline Slider inside phone -->
-        <div class="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md p-4 border-t border-slate-100 z-30 pb-6">
+        <div class="absolute bottom-0 left-0 right-0 bg-black/20 backdrop-blur-lg p-4 border-t border-white/20 z-30 pb-6">
             <div class="flex items-center justify-between mb-2">
-                 <span id="current-year-mini" class="text-xs font-bold text-indigo-600">2000</span>
-                 <span id="end-year-mini" class="text-xs font-bold text-slate-400">2024</span>
+                 <span id="current-year-mini" class="text-xs font-bold text-white">2000</span>
+                 <span id="end-year-mini" class="text-xs font-bold text-white/70">2024</span>
             </div>
-            <input type="range" id="timeline-slider" min="0" value="0" class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 block">
+            <input type="range" id="timeline-slider" min="0" value="0" class="w-full h-1.5 bg-white/30 rounded-lg appearance-none cursor-pointer accent-white block">
         </div>
     </div>
 
     <!-- Control Panel -->
-    <div class="w-full max-w-[400px] mt-6 flex justify-between items-center bg-neutral-800 p-4 rounded-xl shadow-lg border border-neutral-700">
-        <button id="reset-btn" class="p-3 rounded-full hover:bg-neutral-700 text-slate-400 transition" title="Reiniciar">
+    <div class="w-full max-w-[400px] mt-8 flex justify-between items-center bg-slate-800/80 backdrop-blur-xl p-4 rounded-2xl shadow-xl border border-slate-700/50 z-10">
+        <button id="reset-btn" class="p-3 rounded-full hover:bg-white/10 text-slate-300 transition" title="Reiniciar">
             <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
         </button>
 
-        <button id="play-pause-btn" class="bg-indigo-500 hover:bg-indigo-400 text-white rounded-full p-4 shadow-lg shadow-indigo-500/30 transition-transform active:scale-95 flex items-center justify-center w-14 h-14">
-            <i id="play-icon" data-lucide="play" class="w-7 h-7 ml-1"></i>
-            <i id="pause-icon" data-lucide="pause" class="w-7 h-7 hidden"></i>
+        <button id="play-pause-btn" class="bg-white text-indigo-600 hover:bg-indigo-50 rounded-full p-4 shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-transform active:scale-95 flex items-center justify-center w-16 h-16 -mt-8 border-4 border-slate-900">
+            <i id="play-icon" data-lucide="play" class="w-8 h-8 ml-1 fill-current"></i>
+            <i id="pause-icon" data-lucide="pause" class="w-8 h-8 fill-current hidden"></i>
         </button>
 
         <div class="flex flex-col items-end">
-            <span class="text-[10px] uppercase font-bold text-neutral-500 mb-1">Velocidad</span>
-            <div class="flex items-center gap-2 bg-neutral-700 px-3 py-1 rounded-lg">
-                <i data-lucide="fast-forward" class="w-3.5 h-3.5 text-slate-400"></i>
+            <span class="text-[10px] uppercase font-bold text-slate-400 mb-1">Velocidad</span>
+            <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1 rounded-lg border border-slate-700">
+                <i data-lucide="fast-forward" class="w-3.5 h-3.5 text-slate-300"></i>
                 <select id="speed-select" class="bg-transparent text-xs font-semibold text-slate-200 outline-none cursor-pointer w-20 border-none focus:ring-0">
-                    <option value="200">Lento</option>
-                    <option value="150" selected>Normal</option>
-                    <option value="100">Rápido</option>
-                    <option value="50">Turbo</option>
+                    <option value="40" class="bg-slate-900">Lento</option>
+                    <option value="20" class="bg-slate-900" selected>Fluido (60fps)</option>
+                    <option value="10" class="bg-slate-900">Rápido</option>
+                    <option value="5" class="bg-slate-900">Turbo</option>
                 </select>
             </div>
         </div>
@@ -208,7 +228,11 @@
         let timeline = [];
         let currentIndex = 0;
         let isPlaying = false;
-        let frameDuration = 150;
+        
+        // FRAME SETTINGS FOR 60FPS SMOOTHNESS
+        let frameDuration = 20; 
+        let animationStep = 0.01; 
+
         let intervalId = null;
         let chartTitle = "Valor de Marca Global";
         let chartSubtitle = "En millones de USD";
@@ -242,19 +266,26 @@
 
         // Constants
         const ROW_HEIGHT = 58;
-        const OFFSET_TOP = 100;
+        const OFFSET_TOP = 150;
 
         // --- UTILS ---
         const stringToColor = (str) => {
             let hash = 0;
             for (let i = 0; i < str.length; i++) {
+                // Multiplicador primo más grande para dispersar mejor los bits
                 hash = str.charCodeAt(i) + ((hash << 5) - hash);
             }
-            const h = Math.abs(hash % 360);
-            return `hsl(${h}, 70%, 50%)`;
+            
+            // Usar aproximación del Ángulo Dorado (~137.5 grados) para separar tonos
+            // Esto asegura que cadenas similares no terminen con colores adyacentes
+            const angle = Math.abs(hash * 137.508); 
+            const h = angle % 360;
+            
+            // Alta saturación y luminosidad para efecto neón
+            return `hsl(${h}, 95%, 60%)`;
         };
 
-        const interpolateData = (data, step = 0.1) => {
+        const interpolateData = (data, step) => {
             const years = Object.keys(data).map(Number).sort((a, b) => a - b);
             const minYear = years[0];
             const maxYear = years[years.length - 1];
@@ -274,7 +305,7 @@
             };
 
             for (let y = minYear; y <= maxYear; y += step) {
-                const currentYearKey = y.toFixed(1);
+                const currentYearKey = y.toFixed(2); 
                 const prevKeyYear = years.filter(year => year <= y).pop();
                 const nextKeyYear = years.find(year => year > y) || prevKeyYear;
 
@@ -303,7 +334,7 @@
         // --- CORE LOGIC ---
 
         function initData() {
-            denseData = interpolateData(rawData, 0.1);
+            denseData = interpolateData(rawData, animationStep);
             timeline = Object.keys(denseData).sort((a, b) => parseFloat(a) - parseFloat(b));
             
             // Slider config
@@ -320,6 +351,8 @@
 
         function renderFrame() {
             const currentKey = timeline[currentIndex];
+            if (!currentKey) return; 
+            
             const items = [...denseData[currentKey]].sort((a, b) => b.value - a.value);
             const maxValue = items.length > 0 ? items[0].value : 1;
 
@@ -333,7 +366,8 @@
                 ...item,
                 rank: index,
                 barWidth: (item.value / maxValue) * 100,
-                color: item.color || stringToColor(item.category || item.name)
+                // CAMBIO: Usamos item.name como prioridad para garantizar colores distintos
+                color: item.color || stringToColor(item.name)
             }));
 
             const activeNames = new Set(activeItems.map(i => i.name));
@@ -342,31 +376,36 @@
             activeItems.forEach(item => {
                 let el = barElements[item.name];
                 
-                // If element doesn't exist, create it
                 if (!el) {
                     el = document.createElement('div');
-                    el.className = "absolute left-4 right-4 flex items-center bar-transition";
+                    el.className = "absolute left-6 right-6 flex items-center bar-transition";
                     el.style.transitionDuration = `${frameDuration}ms`;
+                    // Updated for visibility on bright background
                     el.innerHTML = `
-                        <div class="absolute -top-5 left-0 text-xs font-bold text-slate-600 truncate max-w-[200px]">${item.name}</div>
+                        <div class="absolute -top-5 left-0 text-xs font-bold text-white drop-shadow-md truncate max-w-[200px] shadow-black">${item.name}</div>
                         <div class="w-full h-10 relative flex items-center">
-                            <div class="bar-fill h-full rounded-r-full shadow-sm flex items-center pl-2 overflow-visible whitespace-nowrap relative bar-transition" style="transition-duration: ${frameDuration}ms;">
+                            <div class="bar-fill h-full rounded-r-full shadow-lg flex items-center pl-2 overflow-visible whitespace-nowrap relative bar-transition border border-white/40" style="transition-duration: ${frameDuration}ms;">
                                 ${item.image ? `<img src="${item.image}" class="w-10 h-10 rounded-full absolute -right-5 border-2 border-white shadow-sm z-10 bg-white" onerror="this.style.display='none'">` : ''}
                             </div>
-                            <span class="value-label ml-2 text-sm font-bold text-slate-700 tabular-nums z-20 shadow-sm bg-white/50 px-1 rounded">0</span>
+                            <span class="value-label ml-2 text-sm font-bold text-indigo-900 tabular-nums z-20 shadow-lg bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/40">0</span>
                         </div>
                     `;
                     els.chartContainer.appendChild(el);
                     barElements[item.name] = el;
                 }
 
-                // Update Position & Styles
+                el.style.transitionDuration = `${frameDuration}ms`;
+                el.querySelector('.bar-fill').style.transitionDuration = `${frameDuration}ms`;
+
                 el.style.top = `${(item.rank * ROW_HEIGHT) + OFFSET_TOP}px`;
                 el.style.opacity = '1';
                 
                 const barFill = el.querySelector('.bar-fill');
                 barFill.style.width = `${Math.max(item.barWidth, 1)}%`;
+                // Make colors solid but vibrant
                 barFill.style.backgroundColor = item.color;
+                // Add glassy shine
+                barFill.style.backgroundImage = "linear-gradient(to bottom, rgba(255,255,255,0.4), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1))";
 
                 const valLabel = el.querySelector('.value-label');
                 valLabel.innerText = Math.round(item.value).toLocaleString();
@@ -377,7 +416,7 @@
                 if (!activeNames.has(name)) {
                     const el = barElements[name];
                     el.style.opacity = '0';
-                    el.style.top = '600px'; // Drop down
+                    el.style.top = '600px'; 
                 }
             });
         }
@@ -411,12 +450,10 @@
         }
 
         function updateTransitionSpeed() {
-             // Update CSS style for existing elements if speed changes
              Object.values(barElements).forEach(el => {
                  el.style.transitionDuration = `${frameDuration}ms`;
                  el.querySelector('.bar-fill').style.transitionDuration = `${frameDuration}ms`;
              });
-             // If playing, restart loop with new speed
              if (isPlaying) {
                  startGameLoop();
              }
@@ -451,7 +488,6 @@
             updateTransitionSpeed();
         });
 
-        // Editor Logic
         els.toggleEditorBtn.addEventListener('click', () => {
             els.editorModal.classList.remove('hidden');
         });
@@ -466,21 +502,16 @@
                 const keys = Object.keys(parsed).sort();
                 if (keys.length === 0) throw new Error("El JSON está vacío.");
                 
-                // Update Data
                 rawData = parsed;
                 chartTitle = els.inputTitle.value;
                 chartSubtitle = els.inputSubtitle.value;
                 els.titleDisplay.innerText = chartTitle;
                 els.subtitleDisplay.innerText = chartSubtitle;
 
-                // Re-init
                 initData();
-                
-                // Reset View
                 currentIndex = 0;
                 pauseGame();
                 
-                // Clear DOM
                 els.chartContainer.innerHTML = '';
                 for (let key in barElements) delete barElements[key];
                 
@@ -494,10 +525,7 @@
             }
         });
 
-        // Initialize Icons
         lucide.createIcons();
-
-        // Boot
         initData();
         renderFrame();
 
