@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bar Chart Race - Ultra Fluid</title>
+    <title>Bar Chart Race - Elecciones España</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -37,14 +37,13 @@
 
         /* Fondo VISUALMENTE ATRACTIVO (Interior del móvil) */
         .visual-bg-vibrant {
-            /* Opción mejorada: Aurora Neon con alto contraste */
+            /* Bandera abstracta / Tonos electorales */
             background: linear-gradient(-45deg, #FF3CAC, #2B86C5, #784BA0, #FF3CAC);
             background-size: 400% 400%;
             animation: gradient-flow 15s ease infinite;
         }
     </style>
 </head>
-<!-- Aplicamos fondo tech oscuro al cuerpo -->
 <body class="min-h-screen tech-bg-dark text-slate-100 font-sans py-8 px-4 flex flex-col items-center justify-center">
 
     <!-- Header -->
@@ -56,7 +55,7 @@
         </button>
     </div>
 
-    <!-- Editor Modal (Hidden by default) -->
+    <!-- Editor Modal -->
     <div id="editor-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="w-full max-w-4xl bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[90vh] flex flex-col text-slate-800">
             <div class="p-4 bg-indigo-900 text-white flex justify-between items-center shrink-0">
@@ -91,30 +90,29 @@
     </div>
 
     <!-- Main Visualization Area (9:16 Aspect Ratio) -->
-    <!-- CAMBIO: Fondo visual-bg-vibrant -->
     <div class="w-full max-w-[400px] aspect-[9/16] visual-bg-vibrant rounded-[2.5rem] shadow-2xl overflow-hidden relative border-8 border-slate-900 ring-4 ring-slate-800/50">
         
-        <!-- Internal Header inside phone (Transparente para ver el fondo) -->
+        <!-- Internal Header -->
         <div class="absolute top-5 left-0 right-0 px-8 py-6 z-20 pointer-events-none flex justify-end">
-            <span id="year-display" class="text-7xl font-black text-white/90 tracking-tighter transition-all duration-300 drop-shadow-lg" style="text-shadow: 0 4px 12px rgba(0,0,0,0.2);">2000</span>
+            <span id="year-display" class="text-7xl font-black text-white/90 tracking-tighter transition-all duration-300 drop-shadow-lg" style="text-shadow: 0 4px 12px rgba(0,0,0,0.2);">1996</span>
         </div>
 
-        <!-- Background Title (Moved to bottom) -->
+        <!-- Background Title -->
         <div class="absolute bottom-24 left-6 right-6 select-none pointer-events-none z-0 text-right">
-            <h2 id="chart-title" class="text-3xl font-black text-white leading-tight drop-shadow-md">Valor de Marca Global</h2>
-            <p id="chart-subtitle" class="text-lg text-white/80 font-medium drop-shadow-sm">En millones de USD</p>
+            <h2 id="chart-title" class="text-3xl font-black text-white leading-tight drop-shadow-md">Elecciones Generales</h2>
+            <p id="chart-subtitle" class="text-lg text-white/80 font-medium drop-shadow-sm">Votos totales en España</p>
         </div>
 
         <!-- Chart Area Container -->
         <div id="chart-container" class="relative w-full h-full px-6 pb-4 pt-36 z-10 box-border">
-            <!-- Bars will be injected here by JS -->
+            <!-- Bars injected here -->
         </div>
 
-        <!-- Timeline Slider inside phone -->
+        <!-- Timeline Slider -->
         <div class="absolute bottom-0 left-0 right-0 bg-black/20 backdrop-blur-lg p-4 border-t border-white/20 z-30 pb-6">
             <div class="flex items-center justify-between mb-2">
-                 <span id="current-year-mini" class="text-xs font-bold text-white">2000</span>
-                 <span id="end-year-mini" class="text-xs font-bold text-white/70">2024</span>
+                 <span id="current-year-mini" class="text-xs font-bold text-white">1996</span>
+                 <span id="end-year-mini" class="text-xs font-bold text-white/70">2023</span>
             </div>
             <input type="range" id="timeline-slider" min="0" value="0" class="w-full h-1.5 bg-white/30 rounded-lg appearance-none cursor-pointer accent-white block">
         </div>
@@ -137,88 +135,139 @@
                 <i data-lucide="fast-forward" class="w-3.5 h-3.5 text-slate-300"></i>
                 <select id="speed-select" class="bg-transparent text-xs font-semibold text-slate-200 outline-none cursor-pointer w-20 border-none focus:ring-0">
                     <option value="40" class="bg-slate-900">Lento</option>
-                    <option value="20" class="bg-slate-900" selected>Fluido (60fps)</option>
+                    <option value="20" class="bg-slate-900" selected>Fluido</option>
                     <option value="10" class="bg-slate-900">Rápido</option>
-                    <option value="5" class="bg-slate-900">Turbo</option>
                 </select>
             </div>
         </div>
     </div>
 
     <script>
-        // --- DATA & CONFIG ---
+        // --- COLORES CORPORATIVOS ---
+        const PARTY_COLORS = {
+            "PP": "#0056A7",
+            "PSOE": "#E30613",
+            "VOX": "#63BE21",
+            "SUMAR": "#E51C55",
+            "PODEMOS": "#6B1F5F",
+            "UNIDAS PODEMOS": "#6B1F5F",
+            "IU": "#D20000",
+            "CS": "#EB6109",
+            "CIU": "#003268",
+            "JUNTS": "#00C3B2",
+            "ERC": "#FFB232",
+            "PNV": "#008000",
+            "UPYD": "#E9007E",
+            "BNG": "#76B3DD",
+            "CC": "#FFD700",
+            "EH BILDU": "#96C400"
+        };
+
+        const PARTY_LOGOS = {
+            "PP": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/People%27s_Party_%28Spain%29_Logo_%282019%29.svg/200px-People%27s_Party_%28Spain%29_Logo_%282019%29.svg.png",
+            "PSOE": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Logotipo_del_PSOE.svg/200px-Logotipo_del_PSOE.svg.png",
+            "VOX": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Vox_logo.svg/200px-Vox_logo.svg.png",
+            "SUMAR": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Logotipo_de_Sumar.svg/200px-Logotipo_de_Sumar.svg.png",
+            "PODEMOS": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Podemos_texto.svg/200px-Podemos_texto.svg.png",
+            "UNIDAS PODEMOS": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Unidas_Podemos_logo.svg/200px-Unidas_Podemos_logo.svg.png",
+            "CS": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Ciudadanos-Cs.svg/200px-Ciudadanos-Cs.svg.png",
+            "ERC": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Esquerra_Republicana_de_Catalunya_logo.svg/200px-Esquerra_Republicana_de_Catalunya_logo.svg.png",
+            "IU": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Izquierda_Unida_logo_2022.svg/200px-Izquierda_Unida_logo_2022.svg.png",
+            "PNV": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/EAJ-PNV_Logo.svg/200px-EAJ-PNV_Logo.svg.png"
+        };
+
+        // --- DATOS REALES ELECCIONES ESPAÑA ---
         const INITIAL_DATA = {
+            "1996": [
+                { name: "PP", value: 9716006 },
+                { name: "PSOE", value: 9425678 },
+                { name: "IU", value: 2639774 },
+                { name: "CIU", value: 1151633 },
+                { name: "PNV", value: 318951 },
+                { name: "CC", value: 220418 },
+                { name: "BNG", value: 220147 }
+            ],
             "2000": [
-                { name: "Coca-Cola", value: 72500, category: "Bebidas" },
-                { name: "Microsoft", value: 70200, category: "Tecnología" },
-                { name: "IBM", value: 53000, category: "Tecnología" },
-                { name: "Intel", value: 39000, category: "Tecnología" },
-                { name: "Nokia", value: 38500, category: "Telecom" },
-                { name: "GE", value: 38000, category: "Industrial" },
-                { name: "Ford", value: 36000, category: "Automotriz" },
-                { name: "Disney", value: 33500, category: "Entretenimiento" },
-                { name: "McDonald's", value: 27800, category: "Comida" },
-                { name: "AT&T", value: 25500, category: "Telecom" }
+                { name: "PP", value: 10321178 },
+                { name: "PSOE", value: 7918752 },
+                { name: "IU", value: 1263043 },
+                { name: "CIU", value: 970421 },
+                { name: "PNV", value: 353953 },
+                { name: "BNG", value: 306268 }
             ],
-            "2005": [
-                { name: "Coca-Cola", value: 67000, category: "Bebidas" },
-                { name: "Microsoft", value: 59000, category: "Tecnología" },
-                { name: "IBM", value: 53000, category: "Tecnología" },
-                { name: "GE", value: 47000, category: "Industrial" },
-                { name: "Intel", value: 35000, category: "Tecnología" },
-                { name: "Nokia", value: 26000, category: "Telecom" },
-                { name: "Toyota", value: 24800, category: "Automotriz" },
-                { name: "Disney", value: 26000, category: "Entretenimiento" },
-                { name: "McDonald's", value: 26000, category: "Comida" },
-                { name: "Google", value: 8000, category: "Tecnología" }
+            "2004": [
+                { name: "PSOE", value: 11026163 },
+                { name: "PP", value: 9763144 },
+                { name: "IU", value: 1284081 },
+                { name: "CIU", value: 835471 },
+                { name: "ERC", value: 652196 },
+                { name: "PNV", value: 420980 }
             ],
-            "2010": [
-                { name: "Coca-Cola", value: 70000, category: "Bebidas" },
-                { name: "IBM", value: 64000, category: "Tecnología" },
-                { name: "Microsoft", value: 60000, category: "Tecnología" },
-                { name: "Google", value: 43000, category: "Tecnología" },
-                { name: "GE", value: 42000, category: "Industrial" },
-                { name: "McDonald's", value: 33000, category: "Comida" },
-                { name: "Intel", value: 32000, category: "Tecnología" },
-                { name: "Apple", value: 21000, category: "Tecnología" },
-                { name: "Disney", value: 28000, category: "Entretenimiento" },
-                { name: "HP", value: 27000, category: "Tecnología" }
+            "2008": [
+                { name: "PSOE", value: 11289335 },
+                { name: "PP", value: 10278010 },
+                { name: "IU", value: 969946 },
+                { name: "CIU", value: 779425 },
+                { name: "PNV", value: 306128 },
+                { name: "UPYD", value: 306079 }
+            ],
+            "2011": [
+                { name: "PP", value: 10866566 },
+                { name: "PSOE", value: 7003511 },
+                { name: "IU", value: 1685991 },
+                { name: "UPYD", value: 1143225 },
+                { name: "CIU", value: 1015691 },
+                { name: "AMAIUR", value: 334498 },
+                { name: "PNV", value: 324317 }
             ],
             "2015": [
-                { name: "Apple", value: 170000, category: "Tecnología" },
-                { name: "Google", value: 120000, category: "Tecnología" },
-                { name: "Coca-Cola", value: 78000, category: "Bebidas" },
-                { name: "Microsoft", value: 67000, category: "Tecnología" },
-                { name: "IBM", value: 65000, category: "Tecnología" },
-                { name: "Toyota", value: 41000, category: "Automotriz" },
-                { name: "Samsung", value: 45000, category: "Tecnología" },
-                { name: "GE", value: 42000, category: "Industrial" },
-                { name: "McDonald's", value: 39000, category: "Comida" },
-                { name: "Amazon", value: 37000, category: "Tecnología" }
+                { name: "PP", value: 7236965 },
+                { name: "PSOE", value: 5545315 },
+                { name: "PODEMOS", value: 5189463 },
+                { name: "CS", value: 3514528 },
+                { name: "IU", value: 926783 },
+                { name: "ERC", value: 601782 },
+                { name: "DL", value: 567253 },
+                { name: "PNV", value: 302316 }
             ],
-            "2020": [
-                { name: "Apple", value: 323000, category: "Tecnología" },
-                { name: "Amazon", value: 200000, category: "Tecnología" },
-                { name: "Microsoft", value: 166000, category: "Tecnología" },
-                { name: "Google", value: 165000, category: "Tecnología" },
-                { name: "Samsung", value: 62000, category: "Tecnología" },
-                { name: "Coca-Cola", value: 56000, category: "Bebidas" },
-                { name: "Toyota", value: 51000, category: "Automotriz" },
-                { name: "Mercedes", value: 49000, category: "Automotriz" },
-                { name: "McDonald's", value: 42000, category: "Comida" },
-                { name: "Disney", value: 40000, category: "Entretenimiento" }
+            "2016": [
+                { name: "PP", value: 7941236 },
+                { name: "PSOE", value: 5443846 },
+                { name: "UNIDAS PODEMOS", value: 5087538 },
+                { name: "CS", value: 3141570 },
+                { name: "ERC", value: 632234 },
+                { name: "CDC", value: 483488 },
+                { name: "PNV", value: 287014 }
             ],
-            "2024": [
-                { name: "Apple", value: 480000, category: "Tecnología" },
-                { name: "Microsoft", value: 370000, category: "Tecnología" },
-                { name: "Google", value: 280000, category: "Tecnología" },
-                { name: "Amazon", value: 250000, category: "Tecnología" },
-                { name: "Nvidia", value: 150000, category: "Tecnología" },
-                { name: "Coca-Cola", value: 90000, category: "Bebidas" },
-                { name: "Samsung", value: 90000, category: "Tecnología" },
-                { name: "Toyota", value: 60000, category: "Automotriz" },
-                { name: "McDonald's", value: 55000, category: "Comida" },
-                { name: "Tesla", value: 50000, category: "Automotriz" }
+            "2019.3": [
+                { name: "PSOE", value: 7513142 },
+                { name: "PP", value: 4373653 },
+                { name: "CS", value: 4155665 },
+                { name: "UNIDAS PODEMOS", value: 3751145 },
+                { name: "VOX", value: 2688092 },
+                { name: "ERC", value: 1020392 },
+                { name: "JUNTS", value: 500787 },
+                { name: "PNV", value: 395884 }
+            ],
+            "2019.9": [
+                { name: "PSOE", value: 6792199 },
+                { name: "PP", value: 5047040 },
+                { name: "VOX", value: 3656979 },
+                { name: "UNIDAS PODEMOS", value: 3119364 },
+                { name: "CS", value: 1650318 },
+                { name: "ERC", value: 874859 },
+                { name: "JUNTS", value: 530225 },
+                { name: "PNV", value: 379002 }
+            ],
+            "2023": [
+                { name: "PP", value: 8091840 },
+                { name: "PSOE", value: 7760970 },
+                { name: "VOX", value: 3033744 },
+                { name: "SUMAR", value: 3014006 },
+                { name: "ERC", value: 462883 },
+                { name: "JUNTS", value: 392634 },
+                { name: "EH BILDU", value: 333362 },
+                { name: "PNV", value: 275782 }
             ]
         };
 
@@ -229,13 +278,12 @@
         let currentIndex = 0;
         let isPlaying = false;
         
-        // FRAME SETTINGS FOR 60FPS SMOOTHNESS
         let frameDuration = 20; 
         let animationStep = 0.01; 
 
         let intervalId = null;
-        let chartTitle = "Valor de Marca Global";
-        let chartSubtitle = "En millones de USD";
+        let chartTitle = "Elecciones Generales";
+        let chartSubtitle = "Votos totales en España";
         
         // DOM Elements
         const els = {
@@ -261,28 +309,22 @@
             subtitleDisplay: document.getElementById('chart-subtitle')
         };
 
-        // Cache for bar elements to avoid recreation
         const barElements = {};
-
-        // Constants
         const ROW_HEIGHT = 58;
         const OFFSET_TOP = 150;
 
         // --- UTILS ---
-        const stringToColor = (str) => {
+        const getPartyColor = (name) => {
+            if (PARTY_COLORS[name]) return PARTY_COLORS[name];
+            // Fallback: generar color si no está definido
             let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                // Multiplicador primo más grande para dispersar mejor los bits
-                hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            
-            // Usar aproximación del Ángulo Dorado (~137.5 grados) para separar tonos
-            // Esto asegura que cadenas similares no terminen con colores adyacentes
-            const angle = Math.abs(hash * 137.508); 
-            const h = angle % 360;
-            
-            // Alta saturación y luminosidad para efecto neón
-            return `hsl(${h}, 95%, 60%)`;
+            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            const h = Math.abs(hash % 360);
+            return `hsl(${h}, 70%, 50%)`;
+        };
+
+        const getPartyLogo = (name) => {
+            return PARTY_LOGOS[name] || null;
         };
 
         const interpolateData = (data, step) => {
@@ -293,12 +335,14 @@
 
             const allCompanies = new Set();
             Object.values(data).forEach(yearList => {
-                yearList.forEach(item => allCompanies.add(JSON.stringify({ name: item.name, category: item.category, image: item.image })));
+                yearList.forEach(item => allCompanies.add(JSON.stringify({ name: item.name })));
             });
             const companiesList = Array.from(allCompanies).map(c => JSON.parse(c));
 
             const getValue = (year, name) => {
-                const list = data[year];
+                // Handle near matches for floating point keys
+                const key = Object.keys(data).find(k => Math.abs(parseFloat(k) - year) < 0.001);
+                const list = data[key];
                 if (!list) return 0;
                 const item = list.find(i => i.name === name);
                 return item ? item.value : 0;
@@ -323,7 +367,7 @@
 
                     if (currentVal <= 0 && endVal <= 0) return null;
 
-                    return { ...company, value: currentVal };
+                    return { name: company.name, value: currentVal };
                 }).filter(Boolean);
 
                 interpolated[currentYearKey] = frameItems;
@@ -337,11 +381,8 @@
             denseData = interpolateData(rawData, animationStep);
             timeline = Object.keys(denseData).sort((a, b) => parseFloat(a) - parseFloat(b));
             
-            // Slider config
             els.timelineSlider.max = timeline.length - 1;
             els.endYearMini.innerText = Math.floor(parseFloat(timeline[timeline.length - 1]));
-            
-            // Initial inputs
             els.inputTitle.value = chartTitle;
             els.inputSubtitle.value = chartSubtitle;
             els.inputJson.value = JSON.stringify(rawData, null, 2);
@@ -356,23 +397,21 @@
             const items = [...denseData[currentKey]].sort((a, b) => b.value - a.value);
             const maxValue = items.length > 0 ? items[0].value : 1;
 
-            // Update Header
             els.yearDisplay.innerText = Math.floor(parseFloat(currentKey));
             els.currentYearMini.innerText = Math.floor(parseFloat(currentKey));
             els.timelineSlider.value = currentIndex;
 
-            // Identify active items (top 12)
-            const activeItems = items.slice(0, 12).map((item, index) => ({
+            // Top 10 items
+            const activeItems = items.slice(0, 10).map((item, index) => ({
                 ...item,
                 rank: index,
                 barWidth: (item.value / maxValue) * 100,
-                // CAMBIO: Usamos item.name como prioridad para garantizar colores distintos
-                color: item.color || stringToColor(item.name)
+                color: getPartyColor(item.name),
+                image: getPartyLogo(item.name)
             }));
 
             const activeNames = new Set(activeItems.map(i => i.name));
 
-            // Render Active Items
             activeItems.forEach(item => {
                 let el = barElements[item.name];
                 
@@ -380,12 +419,12 @@
                     el = document.createElement('div');
                     el.className = "absolute left-6 right-6 flex items-center bar-transition";
                     el.style.transitionDuration = `${frameDuration}ms`;
-                    // Updated for visibility on bright background
+                    
                     el.innerHTML = `
                         <div class="absolute -top-5 left-0 text-xs font-bold text-white drop-shadow-md truncate max-w-[200px] shadow-black">${item.name}</div>
                         <div class="w-full h-10 relative flex items-center">
                             <div class="bar-fill h-full rounded-r-full shadow-lg flex items-center pl-2 overflow-visible whitespace-nowrap relative bar-transition border border-white/40" style="transition-duration: ${frameDuration}ms;">
-                                ${item.image ? `<img src="${item.image}" class="w-10 h-10 rounded-full absolute -right-5 border-2 border-white shadow-sm z-10 bg-white" onerror="this.style.display='none'">` : ''}
+                                <img src="" class="party-logo w-8 h-8 rounded-full absolute -right-4 border-2 border-white shadow-sm z-10 bg-white object-contain p-0.5 hidden">
                             </div>
                             <span class="value-label ml-2 text-sm font-bold text-indigo-900 tabular-nums z-20 shadow-lg bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/40">0</span>
                         </div>
@@ -402,16 +441,23 @@
                 
                 const barFill = el.querySelector('.bar-fill');
                 barFill.style.width = `${Math.max(item.barWidth, 1)}%`;
-                // Make colors solid but vibrant
                 barFill.style.backgroundColor = item.color;
-                // Add glassy shine
-                barFill.style.backgroundImage = "linear-gradient(to bottom, rgba(255,255,255,0.4), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1))";
+                barFill.style.backgroundImage = "linear-gradient(to bottom, rgba(255,255,255,0.3), rgba(0,0,0,0.1))";
+
+                // Update Image
+                const imgEl = el.querySelector('.party-logo');
+                if (item.image) {
+                    imgEl.src = item.image;
+                    imgEl.classList.remove('hidden');
+                } else {
+                    imgEl.classList.add('hidden');
+                }
 
                 const valLabel = el.querySelector('.value-label');
                 valLabel.innerText = Math.round(item.value).toLocaleString();
             });
 
-            // Hide inactive items
+            // Hide inactive
             Object.keys(barElements).forEach(name => {
                 if (!activeNames.has(name)) {
                     const el = barElements[name];
@@ -458,8 +504,6 @@
                  startGameLoop();
              }
         }
-
-        // --- EVENT LISTENERS ---
 
         els.playPauseBtn.addEventListener('click', () => {
             if (currentIndex >= timeline.length - 1) {
