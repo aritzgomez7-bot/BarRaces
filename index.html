@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bar Chart Race - Elecciones España</title>
+    <title>Bar Chart Race - Futbolistas Más Valiosos</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -27,17 +27,36 @@
             100% { background-position: 0% 50%; }
         }
 
-        .tech-bg-dark {
+        /* Fondo Estadio Nocturno */
+        .stadium-bg {
             background-color: #0f172a;
-            background-image: radial-gradient(#312e81 1px, transparent 1px), radial-gradient(#312e81 1px, #0f172a 1px);
-            background-size: 40px 40px;
-            background-position: 0 0, 20px 20px;
+            background-image: 
+                radial-gradient(circle at 50% 0%, #1e3a8a 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, #064e3b 0%, transparent 40%),
+                linear-gradient(rgba(0,0,0,0.6) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.6) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            background-position: 0 0, 0 0, 0 0, 0 0;
         }
 
-        .visual-bg-vibrant {
-            background: linear-gradient(-45deg, #FF3CAC, #2B86C5, #784BA0, #FF3CAC);
-            background-size: 400% 400%;
-            animation: gradient-flow 15s ease infinite;
+        /* Fondo Vibrante (Interior Móvil) */
+        .visual-bg-football {
+            background: linear-gradient(135deg, #1a2e05, #14532d, #064e3b);
+            background-size: 200% 200%;
+            animation: gradient-flow 10s ease infinite;
+            position: relative;
+        }
+        
+        /* Líneas de campo sutiles */
+        .visual-bg-football::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 2px, transparent 2px);
+            background-size: 50px 50px;
+            pointer-events: none;
         }
 
         /* Estilo para el fallback de texto en el logo */
@@ -56,35 +75,45 @@
             line-height: 1;
             border: 2px solid white;
         }
+        
+        /* Zoom y ajuste de cara */
+        .player-face {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
     </style>
 </head>
-<body class="min-h-screen tech-bg-dark text-slate-100 font-sans py-8 px-4 flex flex-col items-center justify-center">
+<body class="min-h-screen stadium-bg text-slate-100 font-sans py-8 px-4 flex flex-col items-center justify-center">
 
     <!-- Header -->
     <div class="w-full max-w-[400px] mb-4 flex justify-between items-center pb-2 z-10">
-        <h1 class="text-xl font-bold text-slate-100 drop-shadow-md tracking-wide">Bar Chart Race</h1>
-        <button id="toggle-editor-btn" class="flex items-center gap-2 text-xs text-indigo-100 hover:text-white transition-colors font-medium bg-slate-800/50 backdrop-blur-md px-3 py-2 rounded-lg border border-slate-700/50">
+        <h1 class="text-xl font-bold text-slate-100 drop-shadow-md tracking-wide flex items-center gap-2">
+            <i data-lucide="trophy" class="w-5 h-5 text-yellow-400"></i> Market Value
+        </h1>
+        <button id="toggle-editor-btn" class="flex items-center gap-2 text-xs text-emerald-100 hover:text-white transition-colors font-medium bg-emerald-900/50 backdrop-blur-md px-3 py-2 rounded-lg border border-emerald-700/50">
             <i data-lucide="settings" class="w-3.5 h-3.5"></i>
             <span id="editor-btn-text">Datos</span>
         </button>
     </div>
 
     <!-- Editor Modal -->
-    <div id="editor-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div id="editor-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="w-full max-w-4xl bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[90vh] flex flex-col text-slate-800">
-            <div class="p-4 bg-indigo-900 text-white flex justify-between items-center shrink-0">
+            <div class="p-4 bg-emerald-900 text-white flex justify-between items-center shrink-0">
                 <h3 class="font-bold flex items-center gap-2"><i data-lucide="settings" class="w-5 h-5"></i> Configuración</h3>
-                <button id="close-editor-btn" class="hover:text-indigo-200 text-xl font-bold">&times;</button>
+                <button id="close-editor-btn" class="hover:text-emerald-200 text-xl font-bold">&times;</button>
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto">
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">Título</label>
-                        <input type="text" id="input-title" class="w-full border border-slate-300 rounded p-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                        <input type="text" id="input-title" class="w-full border border-slate-300 rounded p-2 outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">Subtítulo</label>
-                        <input type="text" id="input-subtitle" class="w-full border border-slate-300 rounded p-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                        <input type="text" id="input-subtitle" class="w-full border border-slate-300 rounded p-2 outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
                     <div class="bg-blue-50 p-4 rounded text-sm text-blue-800">
                         <p class="font-bold mb-1">Nota:</p>
@@ -93,9 +122,9 @@
                 </div>
                 <div class="flex flex-col h-full min-h-[300px]">
                     <label class="block text-sm font-semibold text-slate-700 mb-1">JSON</label>
-                    <textarea id="input-json" class="flex-grow w-full border border-slate-300 rounded p-2 font-mono text-xs focus:ring-2 focus:ring-indigo-500 outline-none resize-none"></textarea>
+                    <textarea id="input-json" class="flex-grow w-full border border-slate-300 rounded p-2 font-mono text-xs focus:ring-2 focus:ring-emerald-500 outline-none resize-none"></textarea>
                     <p id="error-msg" class="text-red-500 text-sm mt-2 hidden"></p>
-                    <button id="save-data-btn" class="mt-4 bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition flex justify-center items-center gap-2">
+                    <button id="save-data-btn" class="mt-4 bg-emerald-600 text-white py-2 px-4 rounded hover:bg-emerald-700 transition flex justify-center items-center gap-2">
                         <i data-lucide="save" class="w-4 h-4"></i> Actualizar
                     </button>
                 </div>
@@ -104,17 +133,17 @@
     </div>
 
     <!-- Main Visualization Area (9:16 Aspect Ratio) -->
-    <div class="w-full max-w-[400px] aspect-[9/16] visual-bg-vibrant rounded-[2.5rem] shadow-2xl overflow-hidden relative border-8 border-slate-900 ring-4 ring-slate-800/50">
+    <div class="w-full max-w-[400px] aspect-[9/16] visual-bg-football rounded-[2.5rem] shadow-2xl overflow-hidden relative border-8 border-slate-800 ring-4 ring-slate-700/50">
         
         <!-- Internal Header -->
         <div class="absolute top-5 left-0 right-0 px-8 py-6 z-20 pointer-events-none flex justify-end">
-            <span id="year-display" class="text-7xl font-black text-white/90 tracking-tighter transition-all duration-300 drop-shadow-lg" style="text-shadow: 0 4px 12px rgba(0,0,0,0.2);">1996</span>
+            <span id="year-display" class="text-7xl font-black text-white/90 tracking-tighter transition-all duration-300 drop-shadow-lg" style="text-shadow: 0 4px 12px rgba(0,0,0,0.4);">2005</span>
         </div>
 
         <!-- Background Title -->
         <div class="absolute bottom-24 left-6 right-6 select-none pointer-events-none z-0 text-right">
-            <h2 id="chart-title" class="text-3xl font-black text-white leading-tight drop-shadow-md">Elecciones Generales</h2>
-            <p id="chart-subtitle" class="text-lg text-white/80 font-medium drop-shadow-sm">Votos totales en España</p>
+            <h2 id="chart-title" class="text-3xl font-black text-white leading-tight drop-shadow-md">Valor de Mercado</h2>
+            <p id="chart-subtitle" class="text-lg text-emerald-200 font-medium drop-shadow-sm">Top Mundial (Millones €)</p>
         </div>
 
         <!-- Chart Area Container -->
@@ -123,29 +152,29 @@
         </div>
 
         <!-- Timeline Slider -->
-        <div class="absolute bottom-0 left-0 right-0 bg-black/20 backdrop-blur-lg p-4 border-t border-white/20 z-30 pb-6">
+        <div class="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-lg p-4 border-t border-white/10 z-30 pb-6">
             <div class="flex items-center justify-between mb-2">
-                 <span id="current-year-mini" class="text-xs font-bold text-white">1996</span>
-                 <span id="end-year-mini" class="text-xs font-bold text-white/70">2023</span>
+                 <span id="current-year-mini" class="text-xs font-bold text-white">2005</span>
+                 <span id="end-year-mini" class="text-xs font-bold text-white/70">2025</span>
             </div>
-            <input type="range" id="timeline-slider" min="0" value="0" class="w-full h-1.5 bg-white/30 rounded-lg appearance-none cursor-pointer accent-white block">
+            <input type="range" id="timeline-slider" min="0" value="0" class="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400 block">
         </div>
     </div>
 
     <!-- Control Panel -->
-    <div class="w-full max-w-[400px] mt-8 flex justify-between items-center bg-slate-800/80 backdrop-blur-xl p-4 rounded-2xl shadow-xl border border-slate-700/50 z-10">
+    <div class="w-full max-w-[400px] mt-8 flex justify-between items-center bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl shadow-xl border border-slate-700/50 z-10">
         <button id="reset-btn" class="p-3 rounded-full hover:bg-white/10 text-slate-300 transition" title="Reiniciar">
             <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
         </button>
 
-        <button id="play-pause-btn" class="bg-white text-indigo-600 hover:bg-indigo-50 rounded-full p-4 shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-transform active:scale-95 flex items-center justify-center w-16 h-16 -mt-8 border-4 border-slate-900">
+        <button id="play-pause-btn" class="bg-emerald-500 hover:bg-emerald-400 text-white rounded-full p-4 shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-transform active:scale-95 flex items-center justify-center w-16 h-16 -mt-8 border-4 border-slate-900">
             <i id="play-icon" data-lucide="play" class="w-8 h-8 ml-1 fill-current"></i>
             <i id="pause-icon" data-lucide="pause" class="w-8 h-8 fill-current hidden"></i>
         </button>
 
         <div class="flex flex-col items-end">
             <span class="text-[10px] uppercase font-bold text-slate-400 mb-1">Velocidad</span>
-            <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1 rounded-lg border border-slate-700">
+            <div class="flex items-center gap-2 bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700">
                 <i data-lucide="fast-forward" class="w-3.5 h-3.5 text-slate-300"></i>
                 <select id="speed-select" class="bg-transparent text-xs font-semibold text-slate-200 outline-none cursor-pointer w-20 border-none focus:ring-0">
                     <option value="40" class="bg-slate-900">Lento</option>
@@ -157,81 +186,132 @@
     </div>
 
     <script>
-        // --- COLORES ---
-        const PARTY_COLORS = {
-            "PP": "#0056A7", "PSOE": "#E30613", "VOX": "#63BE21", 
-            "SUMAR": "#E51C55", "PODEMOS": "#6B1F5F", "UNIDAS PODEMOS": "#6B1F5F", 
-            "IU": "#D20000", "CS": "#EB6109", "CIU": "#003268", "JUNTS": "#00C3B2", 
-            "ERC": "#FFB232", "PNV": "#008000", "UPYD": "#E9007E", 
-            "BNG": "#76B3DD", "CC": "#FFD700", "EH BILDU": "#96C400"
+        // --- CONFIGURACIÓN DE JUGADORES (Colores y Fotos) ---
+        // Colores por equipo icónico o selección
+        const PLAYER_COLORS = {
+            "Ronaldinho": "#A50044", "Henry": "#EF0107", "Van Nistelrooy": "#DA291C", "Eto'o": "#004D98",
+            "Kaká": "#C4122E", "Messi": "#6CABDD", "C. Ronaldo": "#FFFFFF", "Rooney": "#DA291C",
+            "Xavi": "#A50044", "Iniesta": "#EDBB00", "Neymar": "#FFDC02", "Bale": "#FFFFFF",
+            "Suarez": "#76B3DD", "Mbappe": "#004170", "Kane": "#FFFFFF", "Salah": "#C8102E",
+            "Haaland": "#6CABDD", "Vinicius Jr": "#FFFFFF", "Bellingham": "#132257", "Yamal": "#A50044",
+            "Saka": "#EF0107", "Pedri": "#EDBB00", "Musiala": "#DC052D", "Valverde": "#FFFFFF",
+            "Gerrard": "#C8102E", "Shevchenko": "#C4122E", "Wirtz": "#000000", "Rodri": "#6CABDD",
+            "Foden": "#6CABDD", "Sancho": "#FDE100", "Mané": "#C8102E", "De Bruyne": "#6CABDD",
+            "Muller": "#DC052D", "Hazard": "#003090", "James": "#FCD116", "Falcao": "#DA291C",
+            "Ribery": "#DC052D", "Torres": "#EF0107", "Fabregas": "#EF0107", "Essien": "#034694",
+            "Buffon": "#FFFFFF", "Ibrahimovic": "#004D98", "Lampard": "#034694", "Alexander-Arnold": "#C8102E"
         };
 
-        // --- FUENTES DE LOGOS (DOMINIOS OFICIALES VIA GOOGLE FAVICONS) ---
-        // Usamos el servicio de Google s2 para obtener el favicon/logo oficial de alta calidad.
-        // Esto evita bloqueos de hotlinking de Wikipedia.
-        const PARTY_DOMAINS = {
-            "PP": "pp.es",
-            "PSOE": "psoe.es",
-            "VOX": "voxespana.es",
-            "SUMAR": "sumarfuturo.com", // Fallback domain
-            "PODEMOS": "podemos.info",
-            "UNIDAS PODEMOS": "podemos.info",
-            "CS": "ciudadanos-cs.org",
-            "ERC": "esquerra.cat",
-            "JUNTS": "junts.cat",
-            "IU": "izquierdaunida.org",
-            "PNV": "eaj-pnv.eus",
-            "EH BILDU": "ehbildu.eus",
-            "UPYD": "upyd.es", // Historical
-            "CIU": "convergencia.cat", // Historical
-            "BNG": "bng.gal",
-            "CC": "coalicioncanaria.org"
+        // --- SISTEMA DE IMÁGENES ROBUSTO (Proxy + Múltiples fuentes) ---
+        // Usamos un proxy (wsrv.nl) para evitar bloqueos de hotlink y recortar la cara.
+        const PROXY = "https://wsrv.nl/?url=";
+        // Parámetros: w=200 (ancho), h=200 (alto), fit=cover (rellenar), a=top (enfocar arriba/cara)
+        const PARAMS = "&w=200&h=200&fit=cover&a=top";
+
+        // Múltiples opciones por jugador. Si falla la primera, el script probará la siguiente.
+        const PLAYER_IMAGES_SOURCES = {
+            "Messi": ["upload.wikimedia.org/wikipedia/commons/c/c1/Lionel_Messi_20180626.jpg", "upload.wikimedia.org/wikipedia/commons/b/b4/Lionel-Messi-Argentina-2022-FIFA-World-Cup_%28cropped%29.jpg"],
+            "C. Ronaldo": ["upload.wikimedia.org/wikipedia/commons/d/d7/Cristiano_Ronaldo_playing_for_Al_Nassr_FC_against_Persepolis%2C_September_2023_%28cropped%29.jpg", "upload.wikimedia.org/wikipedia/commons/8/8c/Cristiano_Ronaldo_2018.jpg"],
+            "Mbappe": ["upload.wikimedia.org/wikipedia/commons/b/b3/2022_FIFA_World_Cup_France_4%E2%80%931_Australia_-_Kylian_Mbapp%C3%A9_%28cropped%29.jpg"],
+            "Haaland": ["upload.wikimedia.org/wikipedia/commons/0/07/Erling_Haaland_2023_%28cropped%29.jpg"],
+            "Vinicius Jr": ["upload.wikimedia.org/wikipedia/commons/f/f3/Vinicius_Jr_2021.jpg"],
+            "Bellingham": ["upload.wikimedia.org/wikipedia/commons/5/57/Jude_Bellingham_2023.jpg"],
+            "Yamal": ["upload.wikimedia.org/wikipedia/commons/2/2e/Lamine_Yamal_2023.jpg"],
+            "Neymar": ["upload.wikimedia.org/wikipedia/commons/b/bb/Neymar_Jr._with_Al_Hilal%2C_3_October_2023_-_03_%28cropped%29.jpg"],
+            "Ronaldinho": ["upload.wikimedia.org/wikipedia/commons/e/e8/Ronaldinho_061115.jpg"],
+            "Henry": ["upload.wikimedia.org/wikipedia/commons/5/53/Thierry_Henry_2013_%28cropped%29.jpg"],
+            "Kaká": ["upload.wikimedia.org/wikipedia/commons/2/23/Kaka_2006.jpg"],
+            "Rooney": ["upload.wikimedia.org/wikipedia/commons/1/11/Wayne_Rooney_Euro_2012_vs_Italy.jpg"],
+            "Van Nistelrooy": ["upload.wikimedia.org/wikipedia/commons/3/3d/Ruud_van_Nistelrooy_%282023%29.jpg"],
+            "Shevchenko": ["upload.wikimedia.org/wikipedia/commons/b/b5/Andriy_Shevchenko_2018.jpg"],
+            "Gerrard": ["upload.wikimedia.org/wikipedia/commons/4/42/Steven_Gerrard_2010.jpg"],
+            "Buffon": ["upload.wikimedia.org/wikipedia/commons/6/69/Gianluigi_Buffon_2013.jpg"],
+            "Xavi": ["upload.wikimedia.org/wikipedia/commons/9/93/Xavi_Hernandez_2012.jpg"],
+            "Iniesta": ["upload.wikimedia.org/wikipedia/commons/6/67/Andr%C3%A9s_Iniesta.jpg"],
+            "Suarez": ["upload.wikimedia.org/wikipedia/commons/9/92/Luis_Su%C3%A1rez_2018.jpg"],
+            "Bale": ["upload.wikimedia.org/wikipedia/commons/2/22/Gareth_Bale_2022.jpg"],
+            "Kane": ["upload.wikimedia.org/wikipedia/commons/2/2e/Harry_Kane_2018.jpg"],
+            "Salah": ["upload.wikimedia.org/wikipedia/commons/c/c1/Mohamed_Salah_2018.jpg"],
+            "Saka": ["upload.wikimedia.org/wikipedia/commons/3/3d/Bukayo_Saka_2021.jpg"],
+            "Musiala": ["upload.wikimedia.org/wikipedia/commons/5/53/Jamal_Musiala_2022.jpg"],
+            "Pedri": ["upload.wikimedia.org/wikipedia/commons/e/e0/Pedri_Euro_2020.jpg"],
+            "Valverde": ["upload.wikimedia.org/wikipedia/commons/0/0f/Fede_Valverde_2022.jpg"],
+            "Wirtz": ["upload.wikimedia.org/wikipedia/commons/2/26/Florian_Wirtz_2021.jpg"],
+            "Rodri": ["upload.wikimedia.org/wikipedia/commons/f/f6/Rodri_2023.jpg"],
+            "Foden": ["upload.wikimedia.org/wikipedia/commons/9/98/Phil_Foden_2021.jpg"],
+            "De Bruyne": ["upload.wikimedia.org/wikipedia/commons/4/40/Kevin_De_Bruyne_201807061.jpg"],
+            "Mané": ["upload.wikimedia.org/wikipedia/commons/d/d4/Sadio_Man%C3%A9_2018.jpg"],
+            "Sancho": ["upload.wikimedia.org/wikipedia/commons/7/73/Jadon_Sancho_2019.jpg"],
+            "Alexander-Arnold": ["upload.wikimedia.org/wikipedia/commons/a/a8/Trent_Alexander-Arnold_2018.jpg"],
+            "Hazard": ["upload.wikimedia.org/wikipedia/commons/a/ad/Eden_Hazard_2018.jpg"],
+            "Muller": ["upload.wikimedia.org/wikipedia/commons/a/a3/Thomas_Muller_2018.jpg"],
+            "James": ["upload.wikimedia.org/wikipedia/commons/2/2b/James_Rodriguez_2018.jpg"],
+            "Falcao": ["upload.wikimedia.org/wikipedia/commons/9/9d/Radamel_Falcao_2018.jpg"],
+            "Cavani": ["upload.wikimedia.org/wikipedia/commons/d/d2/Edinson_Cavani_2018.jpg"],
+            "Ribery": ["upload.wikimedia.org/wikipedia/commons/f/f8/Franck_Ribery_2013.jpg"],
+            "Torres": ["upload.wikimedia.org/wikipedia/commons/2/23/Fernando_Torres_2013.jpg"],
+            "Fabregas": ["upload.wikimedia.org/wikipedia/commons/5/59/Cesc_Fabregas_2013.jpg"],
+            "Lampard": ["upload.wikimedia.org/wikipedia/commons/6/6c/Frank_Lampard_2013.jpg"],
+            "Ibrahimovic": ["upload.wikimedia.org/wikipedia/commons/0/09/Zlatan_Ibrahimovic_2013.jpg"],
+            "Essien": ["upload.wikimedia.org/wikipedia/commons/5/57/Michael_Essien_2012.jpg"]
         };
 
-        // --- DATOS REALES ELECCIONES ESPAÑA ---
+        // --- DATOS HISTÓRICOS (Millones €) ---
         const INITIAL_DATA = {
-            "1996": [
-                { name: "PP", value: 9716006 }, { name: "PSOE", value: 9425678 }, { name: "IU", value: 2639774 }, { name: "CIU", value: 1151633 },
-                { name: "PNV", value: 318951 }, { name: "CC", value: 220418 }, { name: "BNG", value: 220147 }
-            ],
-            "2000": [
-                { name: "PP", value: 10321178 }, { name: "PSOE", value: 7918752 }, { name: "IU", value: 1263043 }, { name: "CIU", value: 970421 },
-                { name: "PNV", value: 353953 }, { name: "BNG", value: 306268 }
-            ],
-            "2004": [
-                { name: "PSOE", value: 11026163 }, { name: "PP", value: 9763144 }, { name: "IU", value: 1284081 }, { name: "CIU", value: 835471 },
-                { name: "ERC", value: 652196 }, { name: "PNV", value: 420980 }
+            "2005": [
+                { name: "Ronaldinho", value: 70 }, { name: "Henry", value: 45 }, { name: "Van Nistelrooy", value: 40 }, 
+                { name: "Shevchenko", value: 38 }, { name: "Rooney", value: 37.5 }, { name: "Essien", value: 38 },
+                { name: "Kaká", value: 35 }, { name: "Buffon", value: 35 }, { name: "Gerrard", value: 30 }
             ],
             "2008": [
-                { name: "PSOE", value: 11289335 }, { name: "PP", value: 10278010 }, { name: "IU", value: 969946 }, { name: "CIU", value: 779425 },
-                { name: "PNV", value: 306128 }, { name: "UPYD", value: 306079 }
+                { name: "Ronaldinho", value: 80 }, { name: "Kaká", value: 70 }, { name: "Messi", value: 60 }, 
+                { name: "C. Ronaldo", value: 60 }, { name: "Gerrard", value: 50 }, { name: "Henry", value: 45 },
+                { name: "Ibrahimovic", value: 45 }, { name: "Lampard", value: 40 }
             ],
-            "2011": [
-                { name: "PP", value: 10866566 }, { name: "PSOE", value: 7003511 }, { name: "IU", value: 1685991 }, { name: "UPYD", value: 1143225 },
-                { name: "CIU", value: 1015691 }, { name: "PNV", value: 324317 }
+            "2010": [
+                { name: "Messi", value: 100 }, { name: "C. Ronaldo", value: 90 }, { name: "Xavi", value: 65 }, 
+                { name: "Iniesta", value: 60 }, { name: "Rooney", value: 55 }, { name: "Fabregas", value: 55 },
+                { name: "Torres", value: 50 }, { name: "Ribery", value: 50 }
+            ],
+            "2013": [
+                { name: "Messi", value: 120 }, { name: "C. Ronaldo", value: 100 }, { name: "Bale", value: 80 }, 
+                { name: "Iniesta", value: 70 }, { name: "Falcao", value: 60 }, { name: "Cavani", value: 60 },
+                { name: "Neymar", value: 50 }
             ],
             "2015": [
-                { name: "PP", value: 7236965 }, { name: "PSOE", value: 5545315 }, { name: "PODEMOS", value: 5189463 }, { name: "CS", value: 3514528 },
-                { name: "IU", value: 926783 }, { name: "ERC", value: 601782 }, { name: "PNV", value: 302316 }
+                { name: "Messi", value: 120 }, { name: "C. Ronaldo", value: 120 }, { name: "Neymar", value: 100 }, 
+                { name: "Suarez", value: 90 }, { name: "James", value: 80 }, { name: "Bale", value: 80 },
+                { name: "Hazard", value: 70 }, { name: "Muller", value: 75 }
             ],
-            "2016": [
-                { name: "PP", value: 7941236 }, { name: "PSOE", value: 5443846 }, { name: "UNIDAS PODEMOS", value: 5087538 }, { name: "CS", value: 3141570 },
-                { name: "ERC", value: 632234 }, { name: "PNV", value: 287014 }
+            "2018": [
+                { name: "Neymar", value: 180 }, { name: "Messi", value: 180 }, { name: "Mbappe", value: 120 }, 
+                { name: "Kane", value: 150 }, { name: "Salah", value: 150 }, { name: "De Bruyne", value: 150 },
+                { name: "C. Ronaldo", value: 100 }, { name: "Hazard", value: 120 }
             ],
-            "2019.3": [
-                { name: "PSOE", value: 7513142 }, { name: "PP", value: 4373653 }, { name: "CS", value: 4155665 }, { name: "UNIDAS PODEMOS", value: 3751145 },
-                { name: "VOX", value: 2688092 }, { name: "ERC", value: 1020392 }, { name: "JUNTS", value: 500787 }, { name: "PNV", value: 395884 }
+            "2020": [
+                { name: "Mbappe", value: 180 }, { name: "Neymar", value: 128 }, { name: "Mané", value: 120 }, 
+                { name: "Salah", value: 120 }, { name: "Kane", value: 120 }, { name: "Haaland", value: 80 },
+                { name: "Sancho", value: 117 }, { name: "Alexander-Arnold", value: 110 }
             ],
-            "2019.9": [
-                { name: "PSOE", value: 6792199 }, { name: "PP", value: 5047040 }, { name: "VOX", value: 3656979 }, { name: "UNIDAS PODEMOS", value: 3119364 },
-                { name: "CS", value: 1650318 }, { name: "ERC", value: 874859 }, { name: "JUNTS", value: 530225 }, { name: "PNV", value: 379002 }
+            "2022": [
+                { name: "Mbappe", value: 160 }, { name: "Haaland", value: 150 }, { name: "Vinicius Jr", value: 120 }, 
+                { name: "Foden", value: 110 }, { name: "Pedri", value: 100 }, { name: "Bellingham", value: 90 },
+                { name: "Saka", value: 90 }, { name: "Musiala", value: 80 }
             ],
-            "2023": [
-                { name: "PP", value: 8091840 }, { name: "PSOE", value: 7760970 }, { name: "VOX", value: 3033744 }, { name: "SUMAR", value: 3014006 },
-                { name: "ERC", value: 462883 }, { name: "JUNTS", value: 392634 }, { name: "EH BILDU", value: 333362 }, { name: "PNV", value: 275782 }
+            "2024": [
+                { name: "Bellingham", value: 180 }, { name: "Haaland", value: 180 }, { name: "Mbappe", value: 180 }, 
+                { name: "Vinicius Jr", value: 150 }, { name: "Saka", value: 130 }, { name: "Foden", value: 130 },
+                { name: "Wirtz", value: 110 }, { name: "Musiala", value: 110 }
+            ],
+            "2025": [
+                { name: "Yamal", value: 200 }, { name: "Vinicius Jr", value: 200 }, { name: "Haaland", value: 180 }, 
+                { name: "Mbappe", value: 180 }, { name: "Bellingham", value: 180 }, { name: "Saka", value: 150 },
+                { name: "Wirtz", value: 140 }, { name: "Musiala", value: 140 }, { name: "Valverde", value: 130 },
+                { name: "Rodri", value: 130 }
             ]
         };
 
+        // Global State
         let rawData = INITIAL_DATA;
         let denseData = {};
         let timeline = [];
@@ -240,8 +320,8 @@
         let frameDuration = 20; 
         let animationStep = 0.01; 
         let intervalId = null;
-        let chartTitle = "Elecciones Generales";
-        let chartSubtitle = "Votos totales en España";
+        let chartTitle = "Valor de Mercado";
+        let chartSubtitle = "Top Mundial (Millones €)";
         
         const els = {
             chartContainer: document.getElementById('chart-container'),
@@ -270,20 +350,20 @@
         const ROW_HEIGHT = 58;
         const OFFSET_TOP = 150;
 
-        const getPartyColor = (name) => {
-            if (PARTY_COLORS[name]) return PARTY_COLORS[name];
+        const getPlayerColor = (name) => {
+            if (PLAYER_COLORS[name]) return PLAYER_COLORS[name];
             let hash = 0;
             for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
             const h = Math.abs(hash % 360);
             return `hsl(${h}, 70%, 50%)`;
         };
 
-        const getPartyLogo = (name) => {
-            if (PARTY_DOMAINS[name]) {
-                // Usar Google Favicons (sz=128 da mejor calidad)
-                return `https://www.google.com/s2/favicons?domain=${PARTY_DOMAINS[name]}&sz=128`;
-            }
-            return null;
+        // Lógica de URL con Proxy
+        const getPlayerImageURL = (name, index = 0) => {
+            const sources = PLAYER_IMAGES_SOURCES[name];
+            if (!sources || !sources[index]) return null;
+            // Combinar proxy + url codificada + parámetros de recorte
+            return PROXY + encodeURIComponent(sources[index]) + PARAMS;
         };
 
         const interpolateData = (data, step) => {
@@ -292,28 +372,29 @@
             const maxYear = years[years.length - 1];
             const interpolated = {};
 
-            const allCompanies = new Set();
+            const allPlayers = new Set();
             Object.values(data).forEach(yearList => {
-                yearList.forEach(item => allCompanies.add(JSON.stringify({ name: item.name })));
+                yearList.forEach(item => allPlayers.add(JSON.stringify({ name: item.name })));
             });
-            const companiesList = Array.from(allCompanies).map(c => JSON.parse(c));
+            const playersList = Array.from(allPlayers).map(c => JSON.parse(c));
 
-            const getValue = (year, name) => {
-                const key = Object.keys(data).find(k => Math.abs(parseFloat(k) - year) < 0.001);
-                const list = data[key];
-                if (!list) return 0;
-                const item = list.find(i => i.name === name);
-                return item ? item.value : 0;
-            };
+            const getRawValueAtYear = (y, name) => {
+                if (data[y]) {
+                    const found = data[y].find(i => i.name === name);
+                    return found ? found.value : 0;
+                }
+                return 0;
+            }
 
             for (let y = minYear; y <= maxYear; y += step) {
                 const currentYearKey = y.toFixed(2); 
                 const prevKeyYear = years.filter(year => year <= y).pop();
                 const nextKeyYear = years.find(year => year > y) || prevKeyYear;
 
-                const frameItems = companiesList.map(company => {
-                    const startVal = getValue(prevKeyYear, company.name);
-                    const endVal = getValue(nextKeyYear, company.name);
+                const frameItems = playersList.map(player => {
+                    const startVal = getRawValueAtYear(prevKeyYear, player.name);
+                    const endVal = getRawValueAtYear(nextKeyYear, player.name);
+                    
                     let currentVal;
                     if (prevKeyYear === nextKeyYear) {
                         currentVal = startVal;
@@ -321,9 +402,12 @@
                         const progress = (y - prevKeyYear) / (nextKeyYear - prevKeyYear);
                         currentVal = startVal + (endVal - startVal) * progress;
                     }
+                    
                     if (currentVal <= 0 && endVal <= 0) return null;
-                    return { name: company.name, value: currentVal };
+                    
+                    return { name: player.name, value: currentVal };
                 }).filter(Boolean);
+                
                 interpolated[currentYearKey] = frameItems;
             }
             return interpolated;
@@ -355,8 +439,9 @@
                 ...item,
                 rank: index,
                 barWidth: (item.value / maxValue) * 100,
-                color: getPartyColor(item.name),
-                image: getPartyLogo(item.name)
+                color: getPlayerColor(item.name),
+                // Empezamos probando la primera fuente
+                imageUrl: getPlayerImageURL(item.name, 0)
             }));
             const activeNames = new Set(activeItems.map(i => i.name));
 
@@ -366,20 +451,20 @@
                     el = document.createElement('div');
                     el.className = "absolute left-6 right-6 flex items-center bar-transition";
                     el.style.transitionDuration = `${frameDuration}ms`;
-                    // Estructura mejorada para el logo: contenedor blanco + fallback de texto
+                    
                     el.innerHTML = `
-                        <div class="absolute -top-5 left-0 text-xs font-bold text-white drop-shadow-md truncate max-w-[200px] shadow-black">${item.name}</div>
+                        <div class="absolute -top-5 left-0 text-xs font-bold text-white drop-shadow-md truncate max-w-[200px] shadow-black" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">${item.name}</div>
                         <div class="w-full h-10 relative flex items-center">
                             <div class="bar-fill h-full rounded-r-full shadow-lg flex items-center pl-2 overflow-visible whitespace-nowrap relative bar-transition border border-white/40" style="transition-duration: ${frameDuration}ms;">
-                                <!-- Contenedor de imagen circular con fondo blanco para asegurar visibilidad -->
-                                <div class="party-logo-container w-8 h-8 rounded-full absolute -right-4 border-2 border-white shadow-sm z-10 bg-white overflow-hidden hidden">
-                                    <!-- Fallback automático en onerror -->
-                                    <img src="" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                                    <!-- Fallback de texto si falla la imagen -->
-                                    <div class="logo-fallback hidden" style="color:${getPartyColor(item.name)}">${item.name.substring(0,2)}</div>
+                                <div class="party-logo-container w-10 h-10 rounded-full absolute -right-5 border-2 border-white shadow-md z-10 bg-white overflow-hidden hidden ring-2 ring-black/20">
+                                    <img src="" referrerpolicy="no-referrer" class="player-face w-full h-full" 
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                         onload="this.style.display='block'; this.nextElementSibling.style.display='none';"
+                                    >
+                                    <div class="logo-fallback hidden" style="color:${getPlayerColor(item.name)}">${item.name.substring(0,2)}</div>
                                 </div>
                             </div>
-                            <span class="value-label ml-2 text-sm font-bold text-indigo-900 tabular-nums z-20 shadow-lg bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/40">0</span>
+                            <span class="value-label ml-2 text-sm font-bold text-white tabular-nums z-20 shadow-lg bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20">0</span>
                         </div>
                     `;
                     els.chartContainer.appendChild(el);
@@ -394,28 +479,26 @@
                 const barFill = el.querySelector('.bar-fill');
                 barFill.style.width = `${Math.max(item.barWidth, 1)}%`;
                 barFill.style.backgroundColor = item.color;
-                barFill.style.backgroundImage = "linear-gradient(to bottom, rgba(255,255,255,0.3), rgba(0,0,0,0.1))";
+                barFill.style.backgroundImage = "linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 100%)";
 
                 const containerEl = el.querySelector('.party-logo-container');
                 const imgEl = containerEl.querySelector('img');
                 const fallbackEl = containerEl.querySelector('.logo-fallback');
 
-                if (item.image) {
-                    if (imgEl.src !== item.image) {
-                        imgEl.src = item.image;
-                        imgEl.style.display = 'block';
-                        fallbackEl.style.display = 'none';
+                if (item.imageUrl) {
+                    // Solo actualizamos si cambia la URL base para evitar parpadeos
+                    if (!imgEl.src.includes(encodeURIComponent(PLAYER_IMAGES_SOURCES[item.name][0]))) {
+                        imgEl.src = item.imageUrl;
                     }
                     containerEl.classList.remove('hidden');
                 } else {
-                    // Si no hay URL definida, mostramos fallback directamente
                     imgEl.style.display = 'none';
                     fallbackEl.style.display = 'flex';
                     containerEl.classList.remove('hidden');
                 }
 
                 const valLabel = el.querySelector('.value-label');
-                valLabel.innerText = Math.round(item.value).toLocaleString();
+                valLabel.innerText = Math.round(item.value) + " M€";
             });
 
             Object.keys(barElements).forEach(name => {
