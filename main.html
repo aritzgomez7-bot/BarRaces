@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bar Chart Race - Vertical</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* Custom smooth transition classes */
+        .bar-transition {
+            transition-property: top, width, opacity, background-color;
+            transition-timing-function: linear;
+        }
+        
+        /* Ocultar barra de scroll en el editor */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-neutral-900 text-slate-100 font-sans p-4 flex flex-col items-center justify-center">
+
+    <!-- Header -->
+    <div class="w-full max-w-[400px] mb-4 flex justify-between items-center pb-2">
+        <h1 class="text-xl font-bold text-slate-100">Bar Chart Race</h1>
+        <button id="toggle-editor-btn" class="flex items-center gap-2 text-xs text-indigo-300 hover:text-indigo-100 transition-colors font-medium bg-indigo-900/50 px-3 py-2 rounded-lg border border-indigo-700">
+            <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+            <span id="editor-btn-text">Datos</span>
+        </button>
+    </div>
+
+    <!-- Editor Modal (Hidden by default) -->
+    <div id="editor-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div class="w-full max-w-4xl bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[90vh] flex flex-col text-slate-800">
+            <div class="p-4 bg-indigo-900 text-white flex justify-between items-center shrink-0">
+                <h3 class="font-bold flex items-center gap-2"><i data-lucide="settings" class="w-5 h-5"></i> Configuración</h3>
+                <button id="close-editor-btn" class="hover:text-indigo-200 text-xl font-bold">&times;</button>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Título</label>
+                        <input type="text" id="input-title" class="w-full border border-slate-300 rounded p-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Subtítulo</label>
+                        <input type="text" id="input-subtitle" class="w-full border border-slate-300 rounded p-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded text-sm text-blue-800">
+                        <p class="font-bold mb-1">Nota:</p>
+                        <p>Usa formato JSON. La app interpolará los años automáticamente.</p>
+                    </div>
+                </div>
+                <div class="flex flex-col h-full min-h-[300px]">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">JSON</label>
+                    <textarea id="input-json" class="flex-grow w-full border border-slate-300 rounded p-2 font-mono text-xs focus:ring-2 focus:ring-indigo-500 outline-none resize-none"></textarea>
+                    <p id="error-msg" class="text-red-500 text-sm mt-2 hidden"></p>
+                    <button id="save-data-btn" class="mt-4 bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition flex justify-center items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i> Actualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Visualization Area (9:16 Aspect Ratio) -->
+    <div class="w-full max-w-[400px] aspect-[9/16] bg-white rounded-[2rem] shadow-2xl overflow-hidden relative border-8 border-neutral-800">
+        
+        <!-- Internal Header inside phone -->
+        <div class="absolute top-0 left-0 right-0 p-6 z-20 bg-gradient-to-b from-white via-white/80 to-transparent pointer-events-none">
+            <h2 id="chart-title" class="text-2xl font-black text-indigo-900 leading-tight">Valor de Marca Global</h2>
+            <p id="chart-subtitle" class="text-slate-500 font-medium">En millones de USD</p>
+        </div>
+
+        <!-- Year Background -->
+        <div class="absolute bottom-20 right-6 select-none pointer-events-none z-0">
+            <span id="year-display" class="text-8xl font-black text-slate-100 tracking-tighter transition-all duration-300">2000</span>
+        </div>
+
+        <!-- Chart Area Container -->
+        <div id="chart-container" class="relative w-full h-full p-4 pt-24 z-10 box-border">
+            <!-- Bars will be injected here by JS -->
+        </div>
+
+        <!-- Timeline Slider inside phone -->
+        <div class="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md p-4 border-t border-slate-100 z-30 pb-6">
+            <div class="flex items-center justify-between mb-2">
+                 <span id="current-year-mini" class="text-xs font-bold text-indigo-600">2000</span>
+                 <span id="end-year-mini" class="text-xs font-bold text-slate-400">2024</span>
+            </div>
+            <input type="range" id="timeline-slider" min="0" value="0" class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 block">
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="w-full max-w-[400px] mt-6 flex justify-between items-center bg-neutral-800 p-4 rounded-xl shadow-lg border border-neutral-700">
+        <button id="reset-btn" class="p-3 rounded-full hover:bg-neutral-700 text-slate-400 transition" title="Reiniciar">
+            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+        </button>
+
+        <button id="play-pause-btn" class="bg-indigo-500 hover:bg-indigo-400 text-white rounded-full p-4 shadow-lg shadow-indigo-500/30 transition-transform active:scale-95 flex items-center justify-center w-14 h-14">
+            <i id="play-icon" data-lucide="play" class="w-7 h-7 ml-1"></i>
+            <i id="pause-icon" data-lucide="pause" class="w-7 h-7 hidden"></i>
+        </button>
+
+        <div class="flex flex-col items-end">
+            <span class="text-[10px] uppercase font-bold text-neutral-500 mb-1">Velocidad</span>
+            <div class="flex items-center gap-2 bg-neutral-700 px-3 py-1 rounded-lg">
+                <i data-lucide="fast-forward" class="w-3.5 h-3.5 text-slate-400"></i>
+                <select id="speed-select" class="bg-transparent text-xs font-semibold text-slate-200 outline-none cursor-pointer w-20 border-none focus:ring-0">
+                    <option value="200">Lento</option>
+                    <option value="150" selected>Normal</option>
+                    <option value="100">Rápido</option>
+                    <option value="50">Turbo</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA & CONFIG ---
+        const INITIAL_DATA = {
+            "2000": [
+                { name: "Coca-Cola", value: 72500, category: "Bebidas" },
+                { name: "Microsoft", value: 70200, category: "Tecnología" },
+                { name: "IBM", value: 53000, category: "Tecnología" },
+                { name: "Intel", value: 39000, category: "Tecnología" },
+                { name: "Nokia", value: 38500, category: "Telecom" },
+                { name: "GE", value: 38000, category: "Industrial" },
+                { name: "Ford", value: 36000, category: "Automotriz" },
+                { name: "Disney", value: 33500, category: "Entretenimiento" },
+                { name: "McDonald's", value: 27800, category: "Comida" },
+                { name: "AT&T", value: 25500, category: "Telecom" }
+            ],
+            "2005": [
+                { name: "Coca-Cola", value: 67000, category: "Bebidas" },
+                { name: "Microsoft", value: 59000, category: "Tecnología" },
+                { name: "IBM", value: 53000, category: "Tecnología" },
+                { name: "GE", value: 47000, category: "Industrial" },
+                { name: "Intel", value: 35000, category: "Tecnología" },
+                { name: "Nokia", value: 26000, category: "Telecom" },
+                { name: "Toyota", value: 24800, category: "Automotriz" },
+                { name: "Disney", value: 26000, category: "Entretenimiento" },
+                { name: "McDonald's", value: 26000, category: "Comida" },
+                { name: "Google", value: 8000, category: "Tecnología" }
+            ],
+            "2010": [
+                { name: "Coca-Cola", value: 70000, category: "Bebidas" },
+                { name: "IBM", value: 64000, category: "Tecnología" },
+                { name: "Microsoft", value: 60000, category: "Tecnología" },
+                { name: "Google", value: 43000, category: "Tecnología" },
+                { name: "GE", value: 42000, category: "Industrial" },
+                { name: "McDonald's", value: 33000, category: "Comida" },
+                { name: "Intel", value: 32000, category: "Tecnología" },
+                { name: "Apple", value: 21000, category: "Tecnología" },
+                { name: "Disney", value: 28000, category: "Entretenimiento" },
+                { name: "HP", value: 27000, category: "Tecnología" }
+            ],
+            "2015": [
+                { name: "Apple", value: 170000, category: "Tecnología" },
+                { name: "Google", value: 120000, category: "Tecnología" },
+                { name: "Coca-Cola", value: 78000, category: "Bebidas" },
+                { name: "Microsoft", value: 67000, category: "Tecnología" },
+                { name: "IBM", value: 65000, category: "Tecnología" },
+                { name: "Toyota", value: 41000, category: "Automotriz" },
+                { name: "Samsung", value: 45000, category: "Tecnología" },
+                { name: "GE", value: 42000, category: "Industrial" },
+                { name: "McDonald's", value: 39000, category: "Comida" },
+                { name: "Amazon", value: 37000, category: "Tecnología" }
+            ],
+            "2020": [
+                { name: "Apple", value: 323000, category: "Tecnología" },
+                { name: "Amazon", value: 200000, category: "Tecnología" },
+                { name: "Microsoft", value: 166000, category: "Tecnología" },
+                { name: "Google", value: 165000, category: "Tecnología" },
+                { name: "Samsung", value: 62000, category: "Tecnología" },
+                { name: "Coca-Cola", value: 56000, category: "Bebidas" },
+                { name: "Toyota", value: 51000, category: "Automotriz" },
+                { name: "Mercedes", value: 49000, category: "Automotriz" },
+                { name: "McDonald's", value: 42000, category: "Comida" },
+                { name: "Disney", value: 40000, category: "Entretenimiento" }
+            ],
+            "2024": [
+                { name: "Apple", value: 480000, category: "Tecnología" },
+                { name: "Microsoft", value: 370000, category: "Tecnología" },
+                { name: "Google", value: 280000, category: "Tecnología" },
+                { name: "Amazon", value: 250000, category: "Tecnología" },
+                { name: "Nvidia", value: 150000, category: "Tecnología" },
+                { name: "Coca-Cola", value: 90000, category: "Bebidas" },
+                { name: "Samsung", value: 90000, category: "Tecnología" },
+                { name: "Toyota", value: 60000, category: "Automotriz" },
+                { name: "McDonald's", value: 55000, category: "Comida" },
+                { name: "Tesla", value: 50000, category: "Automotriz" }
+            ]
+        };
+
+        // Global State
+        let rawData = INITIAL_DATA;
+        let denseData = {};
+        let timeline = [];
+        let currentIndex = 0;
+        let isPlaying = false;
+        let frameDuration = 150;
+        let intervalId = null;
+        let chartTitle = "Valor de Marca Global";
+        let chartSubtitle = "En millones de USD";
+        
+        // DOM Elements
+        const els = {
+            chartContainer: document.getElementById('chart-container'),
+            yearDisplay: document.getElementById('year-display'),
+            timelineSlider: document.getElementById('timeline-slider'),
+            currentYearMini: document.getElementById('current-year-mini'),
+            endYearMini: document.getElementById('end-year-mini'),
+            playPauseBtn: document.getElementById('play-pause-btn'),
+            playIcon: document.getElementById('play-icon'),
+            pauseIcon: document.getElementById('pause-icon'),
+            resetBtn: document.getElementById('reset-btn'),
+            speedSelect: document.getElementById('speed-select'),
+            toggleEditorBtn: document.getElementById('toggle-editor-btn'),
+            closeEditorBtn: document.getElementById('close-editor-btn'),
+            editorModal: document.getElementById('editor-modal'),
+            inputTitle: document.getElementById('input-title'),
+            inputSubtitle: document.getElementById('input-subtitle'),
+            inputJson: document.getElementById('input-json'),
+            saveDataBtn: document.getElementById('save-data-btn'),
+            errorMsg: document.getElementById('error-msg'),
+            titleDisplay: document.getElementById('chart-title'),
+            subtitleDisplay: document.getElementById('chart-subtitle')
+        };
+
+        // Cache for bar elements to avoid recreation
+        const barElements = {};
+
+        // Constants
+        const ROW_HEIGHT = 58;
+        const OFFSET_TOP = 100;
+
+        // --- UTILS ---
+        const stringToColor = (str) => {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const h = Math.abs(hash % 360);
+            return `hsl(${h}, 70%, 50%)`;
+        };
+
+        const interpolateData = (data, step = 0.1) => {
+            const years = Object.keys(data).map(Number).sort((a, b) => a - b);
+            const minYear = years[0];
+            const maxYear = years[years.length - 1];
+            const interpolated = {};
+
+            const allCompanies = new Set();
+            Object.values(data).forEach(yearList => {
+                yearList.forEach(item => allCompanies.add(JSON.stringify({ name: item.name, category: item.category, image: item.image })));
+            });
+            const companiesList = Array.from(allCompanies).map(c => JSON.parse(c));
+
+            const getValue = (year, name) => {
+                const list = data[year];
+                if (!list) return 0;
+                const item = list.find(i => i.name === name);
+                return item ? item.value : 0;
+            };
+
+            for (let y = minYear; y <= maxYear; y += step) {
+                const currentYearKey = y.toFixed(1);
+                const prevKeyYear = years.filter(year => year <= y).pop();
+                const nextKeyYear = years.find(year => year > y) || prevKeyYear;
+
+                const frameItems = companiesList.map(company => {
+                    const startVal = getValue(prevKeyYear, company.name);
+                    const endVal = getValue(nextKeyYear, company.name);
+                    
+                    let currentVal;
+                    if (prevKeyYear === nextKeyYear) {
+                        currentVal = startVal;
+                    } else {
+                        const progress = (y - prevKeyYear) / (nextKeyYear - prevKeyYear);
+                        currentVal = startVal + (endVal - startVal) * progress;
+                    }
+
+                    if (currentVal <= 0 && endVal <= 0) return null;
+
+                    return { ...company, value: currentVal };
+                }).filter(Boolean);
+
+                interpolated[currentYearKey] = frameItems;
+            }
+            return interpolated;
+        };
+
+        // --- CORE LOGIC ---
+
+        function initData() {
+            denseData = interpolateData(rawData, 0.1);
+            timeline = Object.keys(denseData).sort((a, b) => parseFloat(a) - parseFloat(b));
+            
+            // Slider config
+            els.timelineSlider.max = timeline.length - 1;
+            els.endYearMini.innerText = Math.floor(parseFloat(timeline[timeline.length - 1]));
+            
+            // Initial inputs
+            els.inputTitle.value = chartTitle;
+            els.inputSubtitle.value = chartSubtitle;
+            els.inputJson.value = JSON.stringify(rawData, null, 2);
+            els.titleDisplay.innerText = chartTitle;
+            els.subtitleDisplay.innerText = chartSubtitle;
+        }
+
+        function renderFrame() {
+            const currentKey = timeline[currentIndex];
+            const items = [...denseData[currentKey]].sort((a, b) => b.value - a.value);
+            const maxValue = items.length > 0 ? items[0].value : 1;
+
+            // Update Header
+            els.yearDisplay.innerText = Math.floor(parseFloat(currentKey));
+            els.currentYearMini.innerText = Math.floor(parseFloat(currentKey));
+            els.timelineSlider.value = currentIndex;
+
+            // Identify active items (top 12)
+            const activeItems = items.slice(0, 12).map((item, index) => ({
+                ...item,
+                rank: index,
+                barWidth: (item.value / maxValue) * 100,
+                color: item.color || stringToColor(item.category || item.name)
+            }));
+
+            const activeNames = new Set(activeItems.map(i => i.name));
+
+            // Render Active Items
+            activeItems.forEach(item => {
+                let el = barElements[item.name];
+                
+                // If element doesn't exist, create it
+                if (!el) {
+                    el = document.createElement('div');
+                    el.className = "absolute left-4 right-4 flex items-center bar-transition";
+                    el.style.transitionDuration = `${frameDuration}ms`;
+                    el.innerHTML = `
+                        <div class="absolute -top-5 left-0 text-xs font-bold text-slate-600 truncate max-w-[200px]">${item.name}</div>
+                        <div class="w-full h-10 relative flex items-center">
+                            <div class="bar-fill h-full rounded-r-full shadow-sm flex items-center pl-2 overflow-visible whitespace-nowrap relative bar-transition" style="transition-duration: ${frameDuration}ms;">
+                                ${item.image ? `<img src="${item.image}" class="w-10 h-10 rounded-full absolute -right-5 border-2 border-white shadow-sm z-10 bg-white" onerror="this.style.display='none'">` : ''}
+                            </div>
+                            <span class="value-label ml-2 text-sm font-bold text-slate-700 tabular-nums z-20 shadow-sm bg-white/50 px-1 rounded">0</span>
+                        </div>
+                    `;
+                    els.chartContainer.appendChild(el);
+                    barElements[item.name] = el;
+                }
+
+                // Update Position & Styles
+                el.style.top = `${(item.rank * ROW_HEIGHT) + OFFSET_TOP}px`;
+                el.style.opacity = '1';
+                
+                const barFill = el.querySelector('.bar-fill');
+                barFill.style.width = `${Math.max(item.barWidth, 1)}%`;
+                barFill.style.backgroundColor = item.color;
+
+                const valLabel = el.querySelector('.value-label');
+                valLabel.innerText = Math.round(item.value).toLocaleString();
+            });
+
+            // Hide inactive items
+            Object.keys(barElements).forEach(name => {
+                if (!activeNames.has(name)) {
+                    const el = barElements[name];
+                    el.style.opacity = '0';
+                    el.style.top = '600px'; // Drop down
+                }
+            });
+        }
+
+        function startGameLoop() {
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(() => {
+                if (currentIndex < timeline.length - 1) {
+                    currentIndex++;
+                    renderFrame();
+                } else {
+                    pauseGame();
+                }
+            }, frameDuration);
+        }
+
+        function pauseGame() {
+            isPlaying = false;
+            clearInterval(intervalId);
+            updatePlayButton();
+        }
+
+        function updatePlayButton() {
+            if (isPlaying) {
+                els.playIcon.classList.add('hidden');
+                els.pauseIcon.classList.remove('hidden');
+            } else {
+                els.playIcon.classList.remove('hidden');
+                els.pauseIcon.classList.add('hidden');
+            }
+        }
+
+        function updateTransitionSpeed() {
+             // Update CSS style for existing elements if speed changes
+             Object.values(barElements).forEach(el => {
+                 el.style.transitionDuration = `${frameDuration}ms`;
+                 el.querySelector('.bar-fill').style.transitionDuration = `${frameDuration}ms`;
+             });
+             // If playing, restart loop with new speed
+             if (isPlaying) {
+                 startGameLoop();
+             }
+        }
+
+        // --- EVENT LISTENERS ---
+
+        els.playPauseBtn.addEventListener('click', () => {
+            if (currentIndex >= timeline.length - 1) {
+                currentIndex = 0;
+            }
+            isPlaying = !isPlaying;
+            updatePlayButton();
+            if (isPlaying) startGameLoop();
+            else clearInterval(intervalId);
+        });
+
+        els.resetBtn.addEventListener('click', () => {
+            pauseGame();
+            currentIndex = 0;
+            renderFrame();
+        });
+
+        els.timelineSlider.addEventListener('input', (e) => {
+            currentIndex = parseInt(e.target.value);
+            pauseGame();
+            renderFrame();
+        });
+
+        els.speedSelect.addEventListener('change', (e) => {
+            frameDuration = parseInt(e.target.value);
+            updateTransitionSpeed();
+        });
+
+        // Editor Logic
+        els.toggleEditorBtn.addEventListener('click', () => {
+            els.editorModal.classList.remove('hidden');
+        });
+
+        els.closeEditorBtn.addEventListener('click', () => {
+            els.editorModal.classList.add('hidden');
+        });
+
+        els.saveDataBtn.addEventListener('click', () => {
+            try {
+                const parsed = JSON.parse(els.inputJson.value);
+                const keys = Object.keys(parsed).sort();
+                if (keys.length === 0) throw new Error("El JSON está vacío.");
+                
+                // Update Data
+                rawData = parsed;
+                chartTitle = els.inputTitle.value;
+                chartSubtitle = els.inputSubtitle.value;
+                els.titleDisplay.innerText = chartTitle;
+                els.subtitleDisplay.innerText = chartSubtitle;
+
+                // Re-init
+                initData();
+                
+                // Reset View
+                currentIndex = 0;
+                pauseGame();
+                
+                // Clear DOM
+                els.chartContainer.innerHTML = '';
+                for (let key in barElements) delete barElements[key];
+                
+                renderFrame();
+
+                els.errorMsg.classList.add('hidden');
+                els.editorModal.classList.add('hidden');
+            } catch (e) {
+                els.errorMsg.innerText = "Error: " + e.message;
+                els.errorMsg.classList.remove('hidden');
+            }
+        });
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Boot
+        initData();
+        renderFrame();
+
+    </script>
+</body>
+</html>
