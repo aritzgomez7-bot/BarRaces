@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bar Chart Race - Futbolistas Más Valiosos</title>
+    <title>Bar Chart Race - Futbolistas Más Valiosos (1990-2025)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -137,7 +137,7 @@
         
         <!-- Internal Header -->
         <div class="absolute top-5 left-0 right-0 px-8 py-6 z-20 pointer-events-none flex justify-end">
-            <span id="year-display" class="text-7xl font-black text-white/90 tracking-tighter transition-all duration-300 drop-shadow-lg" style="text-shadow: 0 4px 12px rgba(0,0,0,0.4);">2005</span>
+            <span id="year-display" class="text-7xl font-black text-white/90 tracking-tighter transition-all duration-300 drop-shadow-lg" style="text-shadow: 0 4px 12px rgba(0,0,0,0.4);">1990</span>
         </div>
 
         <!-- Background Title -->
@@ -154,7 +154,7 @@
         <!-- Timeline Slider -->
         <div class="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-lg p-4 border-t border-white/10 z-30 pb-6">
             <div class="flex items-center justify-between mb-2">
-                 <span id="current-year-mini" class="text-xs font-bold text-white">2005</span>
+                 <span id="current-year-mini" class="text-xs font-bold text-white">1990</span>
                  <span id="end-year-mini" class="text-xs font-bold text-white/70">2025</span>
             </div>
             <input type="range" id="timeline-slider" min="0" value="0" class="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400 block">
@@ -189,6 +189,11 @@
         // --- CONFIGURACIÓN DE JUGADORES (Colores y Fotos) ---
         // Colores por equipo icónico o selección
         const PLAYER_COLORS = {
+            "Maradona": "#6CABDD", "Van Basten": "#C4122E", "Matthaus": "#000000", "Baggio": "#000000",
+            "Papin": "#004D98", "Romario": "#A50044", "Stoichkov": "#A50044", "Weah": "#C4122E",
+            "Shearer": "#000000", "Ronaldo": "#A50044", "Zidane": "#FFFFFF", "Del Piero": "#000000",
+            "Batistuta": "#6F263D", "Bergkamp": "#EF0107", "Rivaldo": "#A50044", "Figo": "#FFFFFF",
+            "Vieri": "#0068A8", "Beckham": "#DA291C", "Raul": "#FFFFFF", "Kahn": "#DC052D",
             "Ronaldinho": "#A50044", "Henry": "#EF0107", "Van Nistelrooy": "#DA291C", "Eto'o": "#004D98",
             "Kaká": "#C4122E", "Messi": "#6CABDD", "C. Ronaldo": "#FFFFFF", "Rooney": "#DA291C",
             "Xavi": "#A50044", "Iniesta": "#EDBB00", "Neymar": "#FFDC02", "Bale": "#FFFFFF",
@@ -199,19 +204,41 @@
             "Foden": "#6CABDD", "Sancho": "#FDE100", "Mané": "#C8102E", "De Bruyne": "#6CABDD",
             "Muller": "#DC052D", "Hazard": "#003090", "James": "#FCD116", "Falcao": "#DA291C",
             "Ribery": "#DC052D", "Torres": "#EF0107", "Fabregas": "#EF0107", "Essien": "#034694",
-            "Buffon": "#FFFFFF", "Ibrahimovic": "#004D98", "Lampard": "#034694", "Alexander-Arnold": "#C8102E"
+            "Buffon": "#FFFFFF", "Ibrahimovic": "#004D98", "Lampard": "#034694", "Alexander-Arnold": "#C8102E",
+            "Cantona": "#DA291C", "Klinsmann": "#FFFFFF", "Maldini": "#C4122E", "Nedved": "#000000"
         };
 
         // --- SISTEMA DE IMÁGENES ROBUSTO (Proxy + Múltiples fuentes) ---
-        // Usamos un proxy (wsrv.nl) para evitar bloqueos de hotlink y recortar la cara.
         const PROXY = "https://wsrv.nl/?url=";
-        // Parámetros: w=200 (ancho), h=200 (alto), fit=cover (rellenar), a=top (enfocar arriba/cara)
         const PARAMS = "&w=200&h=200&fit=cover&a=top";
 
-        // Múltiples opciones por jugador. Si falla la primera, el script probará la siguiente.
+        // Múltiples opciones por jugador.
         const PLAYER_IMAGES_SOURCES = {
-            "Messi": ["upload.wikimedia.org/wikipedia/commons/c/c1/Lionel_Messi_20180626.jpg", "upload.wikimedia.org/wikipedia/commons/b/b4/Lionel-Messi-Argentina-2022-FIFA-World-Cup_%28cropped%29.jpg"],
-            "C. Ronaldo": ["upload.wikimedia.org/wikipedia/commons/d/d7/Cristiano_Ronaldo_playing_for_Al_Nassr_FC_against_Persepolis%2C_September_2023_%28cropped%29.jpg", "upload.wikimedia.org/wikipedia/commons/8/8c/Cristiano_Ronaldo_2018.jpg"],
+            "Maradona": ["upload.wikimedia.org/wikipedia/commons/2/2c/Maradona-Mundial_86_con_la_copa.JPG"],
+            "Van Basten": ["upload.wikimedia.org/wikipedia/commons/4/43/Marco_van_Basten_in_1988.jpg"],
+            "Matthaus": ["upload.wikimedia.org/wikipedia/commons/3/3d/Lothar_Matth%C3%A4us_2012.jpg"],
+            "Baggio": ["upload.wikimedia.org/wikipedia/commons/2/29/Roberto_Baggio_1994.jpg"],
+            "Papin": ["upload.wikimedia.org/wikipedia/commons/0/03/Jean-Pierre_Papin_2013.jpg"],
+            "Romario": ["upload.wikimedia.org/wikipedia/commons/3/30/Rom%C3%A1rio_em_2011.jpg"],
+            "Stoichkov": ["upload.wikimedia.org/wikipedia/commons/5/52/Hristo_Stoichkov_2017.jpg"],
+            "Weah": ["upload.wikimedia.org/wikipedia/commons/5/5f/George_Weah_2017.jpg"],
+            "Cantona": ["upload.wikimedia.org/wikipedia/commons/6/67/Eric_Cantona_Cannes_2013.jpg"],
+            "Maldini": ["upload.wikimedia.org/wikipedia/commons/5/5d/Maldini2008.JPG"],
+            "Shearer": ["upload.wikimedia.org/wikipedia/commons/d/d3/Alan_Shearer_2013.jpg"],
+            "Ronaldo": ["upload.wikimedia.org/wikipedia/commons/b/b3/Ronaldo_Cannes_2018.jpg"],
+            "Zidane": ["upload.wikimedia.org/wikipedia/commons/f/f3/Zinedine_Zidane_by_Tasnim_03.jpg"],
+            "Del Piero": ["upload.wikimedia.org/wikipedia/commons/5/5c/Alessandro_Del_Piero_2012.jpg"],
+            "Batistuta": ["upload.wikimedia.org/wikipedia/commons/7/77/Gabriel_Batistuta_2014.jpg"],
+            "Bergkamp": ["upload.wikimedia.org/wikipedia/commons/5/5e/Dennis_Bergkamp_2013.jpg"],
+            "Rivaldo": ["upload.wikimedia.org/wikipedia/commons/5/52/Rivaldo_2014.jpg"],
+            "Figo": ["upload.wikimedia.org/wikipedia/commons/5/5c/Luis_Figo_2016.jpg"],
+            "Vieri": ["upload.wikimedia.org/wikipedia/commons/0/08/Christian_Vieri_2012.jpg"],
+            "Beckham": ["upload.wikimedia.org/wikipedia/commons/9/92/David_Beckham_2019.jpg"],
+            "Raul": ["upload.wikimedia.org/wikipedia/commons/0/09/Ra%C3%BAl_Gonz%C3%A1lez_2011.jpg"],
+            "Kahn": ["upload.wikimedia.org/wikipedia/commons/2/2f/Oliver_Kahn_2015.jpg"],
+            "Nedved": ["upload.wikimedia.org/wikipedia/commons/2/27/Pavel_Nedv%C4%9Bd_2015.jpg"],
+            "Messi": ["upload.wikimedia.org/wikipedia/commons/c/c1/Lionel_Messi_20180626.jpg"],
+            "C. Ronaldo": ["upload.wikimedia.org/wikipedia/commons/8/8c/Cristiano_Ronaldo_2018.jpg"],
             "Mbappe": ["upload.wikimedia.org/wikipedia/commons/b/b3/2022_FIFA_World_Cup_France_4%E2%80%931_Australia_-_Kylian_Mbapp%C3%A9_%28cropped%29.jpg"],
             "Haaland": ["upload.wikimedia.org/wikipedia/commons/0/07/Erling_Haaland_2023_%28cropped%29.jpg"],
             "Vinicius Jr": ["upload.wikimedia.org/wikipedia/commons/f/f3/Vinicius_Jr_2021.jpg"],
@@ -238,26 +265,37 @@
             "Valverde": ["upload.wikimedia.org/wikipedia/commons/0/0f/Fede_Valverde_2022.jpg"],
             "Wirtz": ["upload.wikimedia.org/wikipedia/commons/2/26/Florian_Wirtz_2021.jpg"],
             "Rodri": ["upload.wikimedia.org/wikipedia/commons/f/f6/Rodri_2023.jpg"],
-            "Foden": ["upload.wikimedia.org/wikipedia/commons/9/98/Phil_Foden_2021.jpg"],
-            "De Bruyne": ["upload.wikimedia.org/wikipedia/commons/4/40/Kevin_De_Bruyne_201807061.jpg"],
-            "Mané": ["upload.wikimedia.org/wikipedia/commons/d/d4/Sadio_Man%C3%A9_2018.jpg"],
-            "Sancho": ["upload.wikimedia.org/wikipedia/commons/7/73/Jadon_Sancho_2019.jpg"],
-            "Alexander-Arnold": ["upload.wikimedia.org/wikipedia/commons/a/a8/Trent_Alexander-Arnold_2018.jpg"],
-            "Hazard": ["upload.wikimedia.org/wikipedia/commons/a/ad/Eden_Hazard_2018.jpg"],
-            "Muller": ["upload.wikimedia.org/wikipedia/commons/a/a3/Thomas_Muller_2018.jpg"],
-            "James": ["upload.wikimedia.org/wikipedia/commons/2/2b/James_Rodriguez_2018.jpg"],
-            "Falcao": ["upload.wikimedia.org/wikipedia/commons/9/9d/Radamel_Falcao_2018.jpg"],
-            "Cavani": ["upload.wikimedia.org/wikipedia/commons/d/d2/Edinson_Cavani_2018.jpg"],
-            "Ribery": ["upload.wikimedia.org/wikipedia/commons/f/f8/Franck_Ribery_2013.jpg"],
-            "Torres": ["upload.wikimedia.org/wikipedia/commons/2/23/Fernando_Torres_2013.jpg"],
-            "Fabregas": ["upload.wikimedia.org/wikipedia/commons/5/59/Cesc_Fabregas_2013.jpg"],
-            "Lampard": ["upload.wikimedia.org/wikipedia/commons/6/6c/Frank_Lampard_2013.jpg"],
-            "Ibrahimovic": ["upload.wikimedia.org/wikipedia/commons/0/09/Zlatan_Ibrahimovic_2013.jpg"],
-            "Essien": ["upload.wikimedia.org/wikipedia/commons/5/57/Michael_Essien_2012.jpg"]
+            "Foden": ["upload.wikimedia.org/wikipedia/commons/9/98/Phil_Foden_2021.jpg"]
         };
 
-        // --- DATOS HISTÓRICOS (Millones €) ---
+        // --- DATOS HISTÓRICOS AMPLIADOS (1990-2025) ---
+        // (Valores en Millones € aprox. basados en records de la época y Transfermarkt)
         const INITIAL_DATA = {
+            "1990": [
+                { name: "Maradona", value: 15 }, { name: "Matthaus", value: 12 }, { name: "Van Basten", value: 15 },
+                { name: "Baggio", value: 14 }, { name: "Gullit", value: 10 }, { name: "Rijkaard", value: 9 },
+                { name: "Maldini", value: 8 }, { name: "Klinsmann", value: 8 }
+            ],
+            "1993": [
+                { name: "Baggio", value: 18 }, { name: "Romario", value: 15 }, { name: "Bergkamp", value: 14 },
+                { name: "Stoichkov", value: 12 }, { name: "Papin", value: 12 }, { name: "Cantona", value: 10 },
+                { name: "Weah", value: 10 }, { name: "Giggs", value: 9 }
+            ],
+            "1996": [
+                { name: "Ronaldo", value: 25 }, { name: "Shearer", value: 20 }, { name: "Weah", value: 18 },
+                { name: "Del Piero", value: 18 }, { name: "Maldini", value: 15 }, { name: "Batistuta", value: 15 },
+                { name: "Seedorf", value: 14 }, { name: "Djorkaeff", value: 12 }
+            ],
+            "1999": [
+                { name: "Ronaldo", value: 45 }, { name: "Vieri", value: 45 }, { name: "Rivaldo", value: 40 },
+                { name: "Zidane", value: 40 }, { name: "Beckham", value: 35 }, { name: "Figo", value: 35 },
+                { name: "Owen", value: 30 }, { name: "Kluivert", value: 30 }, { name: "Raul", value: 30 }
+            ],
+            "2002": [
+                { name: "Zidane", value: 70 }, { name: "Figo", value: 55 }, { name: "Ronaldo", value: 50 },
+                { name: "Henry", value: 45 }, { name: "Ferdinand", value: 40 }, { name: "Vieri", value: 40 },
+                { name: "Raul", value: 40 }, { name: "Ballack", value: 35 }, { name: "Kahn", value: 30 }
+            ],
             "2005": [
                 { name: "Ronaldinho", value: 70 }, { name: "Henry", value: 45 }, { name: "Van Nistelrooy", value: 40 }, 
                 { name: "Shevchenko", value: 38 }, { name: "Rooney", value: 37.5 }, { name: "Essien", value: 38 },
@@ -417,7 +455,9 @@
             denseData = interpolateData(rawData, animationStep);
             timeline = Object.keys(denseData).sort((a, b) => parseFloat(a) - parseFloat(b));
             els.timelineSlider.max = timeline.length - 1;
-            els.endYearMini.innerText = Math.floor(parseFloat(timeline[timeline.length - 1]));
+            els.endYearMini.innerText = Math.floor(parseFloat(timeline[0])); // Fix: use timeline[0] for start
+            
+            // Initial Inputs
             els.inputTitle.value = chartTitle;
             els.inputSubtitle.value = chartSubtitle;
             els.inputJson.value = JSON.stringify(rawData, null, 2);
