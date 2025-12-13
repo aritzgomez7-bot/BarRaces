@@ -1,0 +1,124 @@
+[
+  {
+    "name": "Bill Gates",
+    "source": "Microsoft",
+    "data": [
+      { "year": 2000, "value": 60.0 },
+      { "year": 2004, "value": 46.6 },
+      { "year": 2008, "value": 58.0 },
+      { "year": 2010, "value": 53.0 },
+      { "year": 2014, "value": 76.0 },
+      { "year": 2017, "value": 86.0 },
+      { "year": 2020, "value": 113.0 },
+      { "year": 2021, "value": 130.0 },
+      { "year": 2023, "value": 110.0 },
+      { "year": 2025, "value": 138.0 }
+    ]
+  },
+  {
+    "name": "Warren Buffett",
+    "source": "Berkshire Hathaway",
+    "data": [
+      { "year": 2000, "value": 28.0 },
+      { "year": 2006, "value": 42.0 },
+      { "year": 2008, "value": 62.0 },
+      { "year": 2011, "value": 50.0 },
+      { "year": 2015, "value": 72.7 },
+      { "year": 2019, "value": 82.5 },
+      { "year": 2021, "value": 100.0 },
+      { "year": 2024, "value": 135.0 },
+      { "year": 2025, "value": 145.0 }
+    ]
+  },
+  {
+    "name": "Larry Ellison",
+    "source": "Oracle",
+    "data": [
+      { "year": 2000, "value": 47.0 },
+      { "year": 2005, "value": 18.4 },
+      { "year": 2010, "value": 28.0 },
+      { "year": 2015, "value": 54.3 },
+      { "year": 2019, "value": 62.5 },
+      { "year": 2021, "value": 93.0 },
+      { "year": 2023, "value": 107.0 },
+      { "year": 2024, "value": 140.0 },
+      { "year": 2025, "value": 155.0 }
+    ]
+  },
+  {
+    "name": "Jeff Bezos",
+    "source": "Amazon",
+    "data": [
+      { "year": 2000, "value": 6.0 },
+      { "year": 2005, "value": 4.1 },
+      { "year": 2010, "value": 12.3 },
+      { "year": 2015, "value": 34.8 },
+      { "year": 2017, "value": 72.8 },
+      { "year": 2018, "value": 112.0 },
+      { "year": 2020, "value": 185.0 },
+      { "year": 2021, "value": 177.0 },
+      { "year": 2023, "value": 160.0 },
+      { "year": 2025, "value": 210.0 }
+    ]
+  },
+  {
+    "name": "Carlos Slim",
+    "source": "Telecom",
+    "data": [
+      { "year": 2000, "value": 11.0 },
+      { "year": 2005, "value": 23.8 },
+      { "year": 2010, "value": 53.5 },
+      { "year": 2012, "value": 69.0 },
+      { "year": 2015, "value": 77.1 },
+      { "year": 2018, "value": 67.1 },
+      { "year": 2021, "value": 62.8 },
+      { "year": 2024, "value": 102.0 },
+      { "year": 2025, "value": 105.0 }
+    ]
+  },
+  {
+    "name": "Elon Musk",
+    "source": "Tesla/SpaceX",
+    "data": [
+      { "year": 2012, "value": 2.0 },
+      { "year": 2014, "value": 8.4 },
+      { "year": 2017, "value": 13.9 },
+      { "year": 2020, "value": 24.6 },
+      { "year": 2021, "value": 151.0 },
+      { "year": 2022, "value": 219.0 },
+      { "year": 2023, "value": 180.0 },
+      { "year": 2024, "value": 250.0 },
+      { "year": 2025, "value": 285.0 }
+    ]
+  },
+  {
+    "name": "Bernard Arnault",
+    "source": "LVMH",
+    "data": [
+      { "year": 2005, "value": 17.0 },
+      { "year": 2010, "value": 27.5 },
+      { "year": 2015, "value": 37.2 },
+      { "year": 2018, "value": 72.0 },
+      { "year": 2020, "value": 76.0 },
+      { "year": 2021, "value": 150.0 },
+      { "year": 2023, "value": 211.0 },
+      { "year": 2024, "value": 233.0 },
+      { "year": 2025, "value": 245.0 }
+    ]
+  },
+  {
+    "name": "Mark Zuckerberg",
+    "source": "Meta",
+    "data": [
+      { "year": 2008, "value": 1.5 },
+      { "year": 2010, "value": 4.0 },
+      { "year": 2014, "value": 28.5 },
+      { "year": 2016, "value": 44.6 },
+      { "year": 2018, "value": 71.0 },
+      { "year": 2020, "value": 97.0 },
+      { "year": 2022, "value": 67.3 },
+      { "year": 2024, "value": 177.0 },
+      { "year": 2025, "value": 190.0 }
+    ]
+  }
+]
