@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bar Chart Race - Futbolistas Más Valiosos (1990-2025)</title>
+    <title>Bar Chart Race - Custom Data</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -16,9 +16,11 @@
             transition-timing-function: linear;
         }
         
-        /* --- Scrollbar Oculta --- */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* --- Scrollbar Personalizada --- */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
 
         /* --- ANIMACIÓN DE FONDO --- */
         @keyframes gradient-flow {
@@ -27,35 +29,31 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* Fondo Estadio Nocturno */
-        .stadium-bg {
+        /* Fondo Oscuro Elegante (Body) */
+        .app-bg {
             background-color: #0f172a;
             background-image: 
-                radial-gradient(circle at 50% 0%, #1e3a8a 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, #064e3b 0%, transparent 40%),
-                linear-gradient(rgba(0,0,0,0.6) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,0,0,0.6) 1px, transparent 1px);
-            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
-            background-position: 0 0, 0 0, 0 0, 0 0;
+                radial-gradient(circle at 50% 0%, #334155 0%, transparent 50%),
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
         }
 
-        /* Fondo Vibrante (Interior Móvil) */
-        .visual-bg-football {
-            background: linear-gradient(135deg, #1a2e05, #14532d, #064e3b);
-            background-size: 200% 200%;
-            animation: gradient-flow 10s ease infinite;
+        /* Fondo del Chart (Interior Móvil) */
+        .chart-bg {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
             position: relative;
         }
         
-        /* Líneas de campo sutiles */
-        .visual-bg-football::after {
+        /* Rejilla sutil */
+        .chart-bg::after {
             content: "";
             position: absolute;
             inset: 0;
             background-image: 
-                linear-gradient(rgba(255,255,255,0.03) 2px, transparent 2px),
-                linear-gradient(90deg, rgba(255,255,255,0.03) 2px, transparent 2px);
-            background-size: 50px 50px;
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
             pointer-events: none;
         }
 
@@ -76,88 +74,237 @@
             border: 2px solid white;
         }
         
-        /* Zoom y ajuste de cara */
+        /* Zoom y ajuste de imagen */
         .player-face {
             width: 100%;
             height: 100%;
             object-fit: cover;
             border-radius: 50%;
         }
+        
+        /* Chip de selección */
+        .player-chip.active {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            border-color: #2563eb;
+        }
+
+        /* Estilos para la paleta de colores */
+        .color-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .color-swatch:hover {
+            transform: scale(1.2);
+            z-index: 10;
+        }
+        .color-swatch.selected {
+            transform: scale(1.2);
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #0f172a;
+            z-index: 20;
+        }
     </style>
 </head>
-<body class="min-h-screen stadium-bg text-slate-100 font-sans py-8 px-4 flex flex-col items-center justify-center">
+<body class="min-h-screen app-bg text-slate-100 font-sans py-8 px-4 flex flex-col items-center justify-center">
 
     <!-- Header -->
     <div class="w-full max-w-[400px] mb-4 flex justify-between items-center pb-2 z-10">
         <h1 class="text-xl font-bold text-slate-100 drop-shadow-md tracking-wide flex items-center gap-2">
-            <i data-lucide="trophy" class="w-5 h-5 text-yellow-400"></i> Market Value
+            <i data-lucide="bar-chart-2" class="w-5 h-5 text-blue-400"></i> Bar Chart Race
         </h1>
-        <button id="toggle-editor-btn" class="flex items-center gap-2 text-xs text-emerald-100 hover:text-white transition-colors font-medium bg-emerald-900/50 backdrop-blur-md px-3 py-2 rounded-lg border border-emerald-700/50">
+        <button id="toggle-editor-btn" class="flex items-center gap-2 text-xs text-blue-100 hover:text-white transition-colors font-medium bg-blue-900/50 backdrop-blur-md px-3 py-2 rounded-lg border border-blue-700/50 shadow-lg">
             <i data-lucide="settings" class="w-3.5 h-3.5"></i>
-            <span id="editor-btn-text">Datos</span>
+            <span id="editor-btn-text">Gestionar Datos</span>
         </button>
     </div>
 
     <!-- Editor Modal -->
     <div id="editor-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-        <div class="w-full max-w-4xl bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[90vh] flex flex-col text-slate-800">
-            <div class="p-4 bg-emerald-900 text-white flex justify-between items-center shrink-0">
-                <h3 class="font-bold flex items-center gap-2"><i data-lucide="settings" class="w-5 h-5"></i> Configuración</h3>
-                <button id="close-editor-btn" class="hover:text-emerald-200 text-xl font-bold">&times;</button>
-            </div>
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1">Título</label>
-                        <input type="text" id="input-title" class="w-full border border-slate-300 rounded p-2 outline-none focus:ring-2 focus:ring-emerald-500">
+        <div class="w-full max-w-5xl bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-300 h-[90vh] flex flex-col text-slate-800">
+            
+            <!-- Modal Header -->
+            <div class="p-4 bg-slate-900 text-white flex justify-between items-center shrink-0 border-b border-slate-700">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-600 p-2 rounded-lg">
+                        <i data-lucide="database" class="w-5 h-5 text-white"></i>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1">Subtítulo</label>
-                        <input type="text" id="input-subtitle" class="w-full border border-slate-300 rounded p-2 outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div class="bg-blue-50 p-4 rounded text-sm text-blue-800">
-                        <p class="font-bold mb-1">Nota:</p>
-                        <p>Usa formato JSON. La app interpolará los años automáticamente.</p>
+                        <h3 class="font-bold text-lg leading-tight">Gestión de Datos</h3>
+                        <p class="text-xs text-slate-400">Importa JSON o edita manualmente</p>
                     </div>
                 </div>
-                <div class="flex flex-col h-full min-h-[300px]">
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">JSON</label>
-                    <textarea id="input-json" class="flex-grow w-full border border-slate-300 rounded p-2 font-mono text-xs focus:ring-2 focus:ring-emerald-500 outline-none resize-none"></textarea>
-                    <p id="error-msg" class="text-red-500 text-sm mt-2 hidden"></p>
-                    <button id="save-data-btn" class="mt-4 bg-emerald-600 text-white py-2 px-4 rounded hover:bg-emerald-700 transition flex justify-center items-center gap-2">
-                        <i data-lucide="save" class="w-4 h-4"></i> Actualizar
-                    </button>
+                <button id="close-editor-btn" class="hover:bg-slate-800 p-2 rounded-lg transition-colors text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body (Two Columns) -->
+            <div class="flex flex-col md:flex-row h-full overflow-hidden bg-slate-50">
+                
+                <!-- Left Column: Import & List -->
+                <div class="w-full md:w-1/3 bg-white border-r border-slate-200 flex flex-col h-full shrink-0">
+                    
+                    <!-- Import Section -->
+                    <div class="p-4 bg-blue-50 border-b border-blue-100">
+                        <input type="file" id="file-upload" class="hidden" accept=".json">
+                        <button id="btn-trigger-upload" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95">
+                            <i data-lucide="upload" class="w-4 h-4"></i> Importar JSON
+                        </button>
+                        <p class="text-[10px] text-blue-800 mt-2 text-center leading-tight">
+                            Formato: Array de objetos con "name" y lista "data" ({year, value}).
+                        </p>
+                    </div>
+
+                    <div class="p-3 border-b border-slate-100 bg-slate-50/50">
+                        <div class="relative">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+                            <input type="text" id="search-player" placeholder="Filtrar..." class="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+                    
+                    <div id="player-list" class="flex-grow overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                        <!-- Chips injected here -->
+                        <div class="p-8 text-center text-slate-400 text-sm">
+                            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                            <p>Sin datos.</p>
+                            <p class="text-xs">Importa un JSON o añade manualmente.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 border-t border-slate-100 bg-slate-50">
+                        <button id="btn-new-player" class="w-full py-2 border border-slate-300 hover:bg-white text-slate-600 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Añadir Barra Manual
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Editor Form -->
+                <div class="w-full md:w-2/3 overflow-y-auto custom-scrollbar p-6 md:p-8 flex flex-col">
+                    
+                    <!-- Editor Title -->
+                    <div class="mb-6 flex justify-between items-end shrink-0">
+                        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                            <span id="editor-mode-title">Editar Barra</span>
+                        </h2>
+                        <span id="player-status-badge" class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded uppercase hidden">Nuevo</span>
+                    </div>
+
+                    <!-- Main Form -->
+                    <div class="space-y-6 flex-grow">
+                        
+                        <!-- 1. Visual Properties -->
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                            <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2">
+                                <i data-lucide="palette" class="w-4 h-4 text-blue-600"></i> Personalización (Manual)
+                            </h4>
+                            
+                            <div class="grid grid-cols-1 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">Nombre (Etiqueta)</label>
+                                    <input type="text" id="edit-name" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">Icono / URL Imagen</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" id="edit-image" placeholder="https://ejemplo.com/logo.png" class="flex-grow p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono text-xs">
+                                        <div class="w-10 h-10 shrink-0 rounded-full border border-slate-200 bg-slate-100 overflow-hidden relative">
+                                            <img id="preview-image" src="" class="w-full h-full object-cover hidden">
+                                            <i data-lucide="image" class="w-5 h-5 text-slate-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" id="preview-placeholder"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 mb-2">Color de Barra</label>
+                                <input type="hidden" id="edit-color-text">
+                                <div id="color-palette-container" class="grid grid-cols-5 gap-y-2 gap-x-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                    <!-- Colors generated by JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Data Entry -->
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                            <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                                <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                    <i data-lucide="bar-chart" class="w-4 h-4 text-blue-600"></i> Datos Históricos
+                                </h4>
+                                <div class="flex gap-2">
+                                     <input type="number" id="new-year-input" placeholder="Año" class="w-20 p-1.5 text-xs border border-slate-300 rounded text-center">
+                                     <button id="btn-add-year" class="bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs px-3 py-1.5 rounded font-bold transition-colors">
+                                        + Añadir Año
+                                     </button>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
+                                <div class="grid grid-cols-4 bg-slate-100 p-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200">
+                                    <div class="col-span-1">Año</div>
+                                    <div class="col-span-2">Valor</div>
+                                    <div class="col-span-1">Acción</div>
+                                </div>
+                                <div id="data-rows-container" class="max-h-60 overflow-y-auto custom-scrollbar p-1 space-y-1">
+                                    <div class="p-4 text-center text-xs text-slate-400 italic">Selecciona un elemento para editar sus datos</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex gap-3 pt-4 pb-8">
+                            <button id="btn-save-player" class="flex-grow bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl transform active:scale-[0.98] flex justify-center items-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i> Guardar Cambios
+                            </button>
+                            <button id="btn-download-json" class="px-4 py-3 border border-slate-300 text-slate-600 rounded-xl font-medium hover:bg-slate-50 transition-colors" title="Ver JSON Actual">
+                                <i data-lucide="code" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+
+                        <!-- JSON RAW Area -->
+                        <div id="json-section" class="hidden pb-8">
+                            <label class="block text-xs font-bold text-slate-500 mb-1">Estado Actual (JSON)</label>
+                            <textarea id="input-json" class="w-full h-32 border border-slate-300 rounded p-2 font-mono text-[10px] focus:ring-2 focus:ring-blue-500 outline-none resize-none bg-slate-900 text-blue-400"></textarea>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Main Visualization Area (9:16 Aspect Ratio) -->
-    <div class="w-full max-w-[400px] aspect-[9/16] visual-bg-football rounded-[2.5rem] shadow-2xl overflow-hidden relative border-8 border-slate-800 ring-4 ring-slate-700/50">
+    <!-- Main Visualization Area -->
+    <div class="w-full max-w-[400px] aspect-[9/16] chart-bg rounded-[2.5rem] shadow-2xl overflow-hidden relative border-8 border-slate-800 ring-4 ring-slate-700/50">
         
         <!-- Internal Header -->
         <div class="absolute top-5 left-0 right-0 px-8 py-6 z-20 pointer-events-none flex justify-end">
-            <span id="year-display" class="text-7xl font-black text-white/90 tracking-tighter transition-all duration-300 drop-shadow-lg" style="text-shadow: 0 4px 12px rgba(0,0,0,0.4);">1990</span>
+            <span id="year-display" class="text-7xl font-black text-white/90 tracking-tighter transition-all duration-300 drop-shadow-lg" style="text-shadow: 0 4px 12px rgba(0,0,0,0.4);">---</span>
         </div>
 
         <!-- Background Title -->
         <div class="absolute bottom-24 left-6 right-6 select-none pointer-events-none z-0 text-right">
-            <h2 id="chart-title" class="text-3xl font-black text-white leading-tight drop-shadow-md">Valor de Mercado</h2>
-            <p id="chart-subtitle" class="text-lg text-emerald-200 font-medium drop-shadow-sm">Top Mundial (Millones €)</p>
+            <h2 id="chart-title" class="text-3xl font-black text-white leading-tight drop-shadow-md">Ranking</h2>
+            <p id="chart-subtitle" class="text-lg text-blue-200 font-medium drop-shadow-sm">Histórico</p>
         </div>
 
         <!-- Chart Area Container -->
         <div id="chart-container" class="relative w-full h-full px-6 pb-4 pt-36 z-10 box-border">
-            <!-- Bars injected here -->
+            <div id="empty-state-msg" class="absolute inset-0 flex flex-col items-center justify-center text-white/30 pointer-events-none pb-20">
+                <i data-lucide="bar-chart-2" class="w-16 h-16 mb-4 opacity-50"></i>
+                <p class="text-sm font-bold">Sin Datos</p>
+                <p class="text-xs">Sube un JSON en Gestión</p>
+            </div>
         </div>
 
         <!-- Timeline Slider -->
         <div class="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-lg p-4 border-t border-white/10 z-30 pb-6">
             <div class="flex items-center justify-between mb-2">
-                 <span id="current-year-mini" class="text-xs font-bold text-white">1990</span>
-                 <span id="end-year-mini" class="text-xs font-bold text-white/70">2025</span>
+                 <span id="current-year-mini" class="text-xs font-bold text-white">---</span>
+                 <span id="end-year-mini" class="text-xs font-bold text-white/70">---</span>
             </div>
-            <input type="range" id="timeline-slider" min="0" value="0" class="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400 block">
+            <input type="range" id="timeline-slider" min="0" value="0" class="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-blue-400 block" disabled>
         </div>
     </div>
 
@@ -167,7 +314,7 @@
             <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
         </button>
 
-        <button id="play-pause-btn" class="bg-emerald-500 hover:bg-emerald-400 text-white rounded-full p-4 shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-transform active:scale-95 flex items-center justify-center w-16 h-16 -mt-8 border-4 border-slate-900">
+        <button id="play-pause-btn" class="bg-blue-600 hover:bg-blue-500 text-white rounded-full p-4 shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-transform active:scale-95 flex items-center justify-center w-16 h-16 -mt-8 border-4 border-slate-900 disabled:opacity-50 disabled:cursor-not-allowed">
             <i id="play-icon" data-lucide="play" class="w-8 h-8 ml-1 fill-current"></i>
             <i id="pause-icon" data-lucide="pause" class="w-8 h-8 fill-current hidden"></i>
         </button>
@@ -186,171 +333,30 @@
     </div>
 
     <script>
-        // --- CONFIGURACIÓN DE JUGADORES (Colores y Fotos) ---
-        // Colores por equipo icónico o selección
-        const PLAYER_COLORS = {
-            "Maradona": "#6CABDD", "Van Basten": "#C4122E", "Matthaus": "#000000", "Baggio": "#000000",
-            "Papin": "#004D98", "Romario": "#A50044", "Stoichkov": "#A50044", "Weah": "#C4122E",
-            "Shearer": "#000000", "Ronaldo": "#A50044", "Zidane": "#FFFFFF", "Del Piero": "#000000",
-            "Batistuta": "#6F263D", "Bergkamp": "#EF0107", "Rivaldo": "#A50044", "Figo": "#FFFFFF",
-            "Vieri": "#0068A8", "Beckham": "#DA291C", "Raul": "#FFFFFF", "Kahn": "#DC052D",
-            "Ronaldinho": "#A50044", "Henry": "#EF0107", "Van Nistelrooy": "#DA291C", "Eto'o": "#004D98",
-            "Kaká": "#C4122E", "Messi": "#6CABDD", "C. Ronaldo": "#FFFFFF", "Rooney": "#DA291C",
-            "Xavi": "#A50044", "Iniesta": "#EDBB00", "Neymar": "#FFDC02", "Bale": "#FFFFFF",
-            "Suarez": "#76B3DD", "Mbappe": "#004170", "Kane": "#FFFFFF", "Salah": "#C8102E",
-            "Haaland": "#6CABDD", "Vinicius Jr": "#FFFFFF", "Bellingham": "#132257", "Yamal": "#A50044",
-            "Saka": "#EF0107", "Pedri": "#EDBB00", "Musiala": "#DC052D", "Valverde": "#FFFFFF",
-            "Gerrard": "#C8102E", "Shevchenko": "#C4122E", "Wirtz": "#000000", "Rodri": "#6CABDD",
-            "Foden": "#6CABDD", "Sancho": "#FDE100", "Mané": "#C8102E", "De Bruyne": "#6CABDD",
-            "Muller": "#DC052D", "Hazard": "#003090", "James": "#FCD116", "Falcao": "#DA291C",
-            "Ribery": "#DC052D", "Torres": "#EF0107", "Fabregas": "#EF0107", "Essien": "#034694",
-            "Buffon": "#FFFFFF", "Ibrahimovic": "#004D98", "Lampard": "#034694", "Alexander-Arnold": "#C8102E",
-            "Cantona": "#DA291C", "Klinsmann": "#FFFFFF", "Maldini": "#C4122E", "Nedved": "#000000"
-        };
-
-        // --- SISTEMA DE IMÁGENES ROBUSTO (Proxy + Múltiples fuentes) ---
+        // --- ESTADO INICIAL VACÍO ---
+        let PLAYER_COLORS = {};        // Mapa Nombre -> Hex
+        let PLAYER_IMAGES_SOURCES = {}; // Mapa Nombre -> [URL]
+        let rawData = {};              // Estructura Interna: { "2000": [{name, value}], ... }
+        
+        // Proxy para imágenes
         const PROXY = "https://wsrv.nl/?url=";
         const PARAMS = "&w=200&h=200&fit=cover&a=top";
 
-        // Múltiples opciones por jugador.
-        const PLAYER_IMAGES_SOURCES = {
-            "Maradona": ["upload.wikimedia.org/wikipedia/commons/2/2c/Maradona-Mundial_86_con_la_copa.JPG"],
-            "Van Basten": ["upload.wikimedia.org/wikipedia/commons/4/43/Marco_van_Basten_in_1988.jpg"],
-            "Matthaus": ["upload.wikimedia.org/wikipedia/commons/3/3d/Lothar_Matth%C3%A4us_2012.jpg"],
-            "Baggio": ["upload.wikimedia.org/wikipedia/commons/2/29/Roberto_Baggio_1994.jpg"],
-            "Papin": ["upload.wikimedia.org/wikipedia/commons/0/03/Jean-Pierre_Papin_2013.jpg"],
-            "Romario": ["upload.wikimedia.org/wikipedia/commons/3/30/Rom%C3%A1rio_em_2011.jpg"],
-            "Stoichkov": ["upload.wikimedia.org/wikipedia/commons/5/52/Hristo_Stoichkov_2017.jpg"],
-            "Weah": ["upload.wikimedia.org/wikipedia/commons/5/5f/George_Weah_2017.jpg"],
-            "Cantona": ["upload.wikimedia.org/wikipedia/commons/6/67/Eric_Cantona_Cannes_2013.jpg"],
-            "Maldini": ["upload.wikimedia.org/wikipedia/commons/5/5d/Maldini2008.JPG"],
-            "Shearer": ["upload.wikimedia.org/wikipedia/commons/d/d3/Alan_Shearer_2013.jpg"],
-            "Ronaldo": ["upload.wikimedia.org/wikipedia/commons/b/b3/Ronaldo_Cannes_2018.jpg"],
-            "Zidane": ["upload.wikimedia.org/wikipedia/commons/f/f3/Zinedine_Zidane_by_Tasnim_03.jpg"],
-            "Del Piero": ["upload.wikimedia.org/wikipedia/commons/5/5c/Alessandro_Del_Piero_2012.jpg"],
-            "Batistuta": ["upload.wikimedia.org/wikipedia/commons/7/77/Gabriel_Batistuta_2014.jpg"],
-            "Bergkamp": ["upload.wikimedia.org/wikipedia/commons/5/5e/Dennis_Bergkamp_2013.jpg"],
-            "Rivaldo": ["upload.wikimedia.org/wikipedia/commons/5/52/Rivaldo_2014.jpg"],
-            "Figo": ["upload.wikimedia.org/wikipedia/commons/5/5c/Luis_Figo_2016.jpg"],
-            "Vieri": ["upload.wikimedia.org/wikipedia/commons/0/08/Christian_Vieri_2012.jpg"],
-            "Beckham": ["upload.wikimedia.org/wikipedia/commons/9/92/David_Beckham_2019.jpg"],
-            "Raul": ["upload.wikimedia.org/wikipedia/commons/0/09/Ra%C3%BAl_Gonz%C3%A1lez_2011.jpg"],
-            "Kahn": ["upload.wikimedia.org/wikipedia/commons/2/2f/Oliver_Kahn_2015.jpg"],
-            "Nedved": ["upload.wikimedia.org/wikipedia/commons/2/27/Pavel_Nedv%C4%9Bd_2015.jpg"],
-            "Messi": ["upload.wikimedia.org/wikipedia/commons/c/c1/Lionel_Messi_20180626.jpg"],
-            "C. Ronaldo": ["upload.wikimedia.org/wikipedia/commons/8/8c/Cristiano_Ronaldo_2018.jpg"],
-            "Mbappe": ["upload.wikimedia.org/wikipedia/commons/b/b3/2022_FIFA_World_Cup_France_4%E2%80%931_Australia_-_Kylian_Mbapp%C3%A9_%28cropped%29.jpg"],
-            "Haaland": ["upload.wikimedia.org/wikipedia/commons/0/07/Erling_Haaland_2023_%28cropped%29.jpg"],
-            "Vinicius Jr": ["upload.wikimedia.org/wikipedia/commons/f/f3/Vinicius_Jr_2021.jpg"],
-            "Bellingham": ["upload.wikimedia.org/wikipedia/commons/5/57/Jude_Bellingham_2023.jpg"],
-            "Yamal": ["upload.wikimedia.org/wikipedia/commons/2/2e/Lamine_Yamal_2023.jpg"],
-            "Neymar": ["upload.wikimedia.org/wikipedia/commons/b/bb/Neymar_Jr._with_Al_Hilal%2C_3_October_2023_-_03_%28cropped%29.jpg"],
-            "Ronaldinho": ["upload.wikimedia.org/wikipedia/commons/e/e8/Ronaldinho_061115.jpg"],
-            "Henry": ["upload.wikimedia.org/wikipedia/commons/5/53/Thierry_Henry_2013_%28cropped%29.jpg"],
-            "Kaká": ["upload.wikimedia.org/wikipedia/commons/2/23/Kaka_2006.jpg"],
-            "Rooney": ["upload.wikimedia.org/wikipedia/commons/1/11/Wayne_Rooney_Euro_2012_vs_Italy.jpg"],
-            "Van Nistelrooy": ["upload.wikimedia.org/wikipedia/commons/3/3d/Ruud_van_Nistelrooy_%282023%29.jpg"],
-            "Shevchenko": ["upload.wikimedia.org/wikipedia/commons/b/b5/Andriy_Shevchenko_2018.jpg"],
-            "Gerrard": ["upload.wikimedia.org/wikipedia/commons/4/42/Steven_Gerrard_2010.jpg"],
-            "Buffon": ["upload.wikimedia.org/wikipedia/commons/6/69/Gianluigi_Buffon_2013.jpg"],
-            "Xavi": ["upload.wikimedia.org/wikipedia/commons/9/93/Xavi_Hernandez_2012.jpg"],
-            "Iniesta": ["upload.wikimedia.org/wikipedia/commons/6/67/Andr%C3%A9s_Iniesta.jpg"],
-            "Suarez": ["upload.wikimedia.org/wikipedia/commons/9/92/Luis_Su%C3%A1rez_2018.jpg"],
-            "Bale": ["upload.wikimedia.org/wikipedia/commons/2/22/Gareth_Bale_2022.jpg"],
-            "Kane": ["upload.wikimedia.org/wikipedia/commons/2/2e/Harry_Kane_2018.jpg"],
-            "Salah": ["upload.wikimedia.org/wikipedia/commons/c/c1/Mohamed_Salah_2018.jpg"],
-            "Saka": ["upload.wikimedia.org/wikipedia/commons/3/3d/Bukayo_Saka_2021.jpg"],
-            "Musiala": ["upload.wikimedia.org/wikipedia/commons/5/53/Jamal_Musiala_2022.jpg"],
-            "Pedri": ["upload.wikimedia.org/wikipedia/commons/e/e0/Pedri_Euro_2020.jpg"],
-            "Valverde": ["upload.wikimedia.org/wikipedia/commons/0/0f/Fede_Valverde_2022.jpg"],
-            "Wirtz": ["upload.wikimedia.org/wikipedia/commons/2/26/Florian_Wirtz_2021.jpg"],
-            "Rodri": ["upload.wikimedia.org/wikipedia/commons/f/f6/Rodri_2023.jpg"],
-            "Foden": ["upload.wikimedia.org/wikipedia/commons/9/98/Phil_Foden_2021.jpg"]
+        // --- PALETA DE COLORES (10 Colores x 5 Tonos) ---
+        const COLOR_PALETTE = {
+            Gris:    ['#f1f5f9', '#cbd5e1', '#94a3b8', '#64748b', '#334155'], 
+            Rojo:    ['#fee2e2', '#fca5a5', '#ef4444', '#b91c1c', '#7f1d1d'], 
+            Naranja: ['#ffedd5', '#fdba74', '#f97316', '#c2410c', '#7c2d12'], 
+            Amarillo:['#fef9c3', '#fde047', '#eab308', '#a16207', '#713f12'], 
+            Verde:   ['#dcfce7', '#86efac', '#22c55e', '#15803d', '#14532d'], 
+            Esmeralda:['#d1fae5', '#6ee7b7', '#10b981', '#047857', '#064e3b'], 
+            Cian:    ['#cffafe', '#67e8f9', '#06b6d4', '#0e7490', '#155e75'], 
+            Azul:    ['#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'], 
+            Indigo:  ['#e0e7ff', '#a5b4fc', '#6366f1', '#4338ca', '#312e81'], 
+            Rosa:    ['#fce7f3', '#f9a8d4', '#ec4899', '#be185d', '#831843'] 
         };
 
-        // --- DATOS HISTÓRICOS AMPLIADOS (1990-2025) ---
-        // (Valores en Millones € aprox. basados en records de la época y Transfermarkt)
-        const INITIAL_DATA = {
-            "1990": [
-                { name: "Maradona", value: 15 }, { name: "Matthaus", value: 12 }, { name: "Van Basten", value: 15 },
-                { name: "Baggio", value: 14 }, { name: "Gullit", value: 10 }, { name: "Rijkaard", value: 9 },
-                { name: "Maldini", value: 8 }, { name: "Klinsmann", value: 8 }
-            ],
-            "1993": [
-                { name: "Baggio", value: 18 }, { name: "Romario", value: 15 }, { name: "Bergkamp", value: 14 },
-                { name: "Stoichkov", value: 12 }, { name: "Papin", value: 12 }, { name: "Cantona", value: 10 },
-                { name: "Weah", value: 10 }, { name: "Giggs", value: 9 }
-            ],
-            "1996": [
-                { name: "Ronaldo", value: 25 }, { name: "Shearer", value: 20 }, { name: "Weah", value: 18 },
-                { name: "Del Piero", value: 18 }, { name: "Maldini", value: 15 }, { name: "Batistuta", value: 15 },
-                { name: "Seedorf", value: 14 }, { name: "Djorkaeff", value: 12 }
-            ],
-            "1999": [
-                { name: "Ronaldo", value: 45 }, { name: "Vieri", value: 45 }, { name: "Rivaldo", value: 40 },
-                { name: "Zidane", value: 40 }, { name: "Beckham", value: 35 }, { name: "Figo", value: 35 },
-                { name: "Owen", value: 30 }, { name: "Kluivert", value: 30 }, { name: "Raul", value: 30 }
-            ],
-            "2002": [
-                { name: "Zidane", value: 70 }, { name: "Figo", value: 55 }, { name: "Ronaldo", value: 50 },
-                { name: "Henry", value: 45 }, { name: "Ferdinand", value: 40 }, { name: "Vieri", value: 40 },
-                { name: "Raul", value: 40 }, { name: "Ballack", value: 35 }, { name: "Kahn", value: 30 }
-            ],
-            "2005": [
-                { name: "Ronaldinho", value: 70 }, { name: "Henry", value: 45 }, { name: "Van Nistelrooy", value: 40 }, 
-                { name: "Shevchenko", value: 38 }, { name: "Rooney", value: 37.5 }, { name: "Essien", value: 38 },
-                { name: "Kaká", value: 35 }, { name: "Buffon", value: 35 }, { name: "Gerrard", value: 30 }
-            ],
-            "2008": [
-                { name: "Ronaldinho", value: 80 }, { name: "Kaká", value: 70 }, { name: "Messi", value: 60 }, 
-                { name: "C. Ronaldo", value: 60 }, { name: "Gerrard", value: 50 }, { name: "Henry", value: 45 },
-                { name: "Ibrahimovic", value: 45 }, { name: "Lampard", value: 40 }
-            ],
-            "2010": [
-                { name: "Messi", value: 100 }, { name: "C. Ronaldo", value: 90 }, { name: "Xavi", value: 65 }, 
-                { name: "Iniesta", value: 60 }, { name: "Rooney", value: 55 }, { name: "Fabregas", value: 55 },
-                { name: "Torres", value: 50 }, { name: "Ribery", value: 50 }
-            ],
-            "2013": [
-                { name: "Messi", value: 120 }, { name: "C. Ronaldo", value: 100 }, { name: "Bale", value: 80 }, 
-                { name: "Iniesta", value: 70 }, { name: "Falcao", value: 60 }, { name: "Cavani", value: 60 },
-                { name: "Neymar", value: 50 }
-            ],
-            "2015": [
-                { name: "Messi", value: 120 }, { name: "C. Ronaldo", value: 120 }, { name: "Neymar", value: 100 }, 
-                { name: "Suarez", value: 90 }, { name: "James", value: 80 }, { name: "Bale", value: 80 },
-                { name: "Hazard", value: 70 }, { name: "Muller", value: 75 }
-            ],
-            "2018": [
-                { name: "Neymar", value: 180 }, { name: "Messi", value: 180 }, { name: "Mbappe", value: 120 }, 
-                { name: "Kane", value: 150 }, { name: "Salah", value: 150 }, { name: "De Bruyne", value: 150 },
-                { name: "C. Ronaldo", value: 100 }, { name: "Hazard", value: 120 }
-            ],
-            "2020": [
-                { name: "Mbappe", value: 180 }, { name: "Neymar", value: 128 }, { name: "Mané", value: 120 }, 
-                { name: "Salah", value: 120 }, { name: "Kane", value: 120 }, { name: "Haaland", value: 80 },
-                { name: "Sancho", value: 117 }, { name: "Alexander-Arnold", value: 110 }
-            ],
-            "2022": [
-                { name: "Mbappe", value: 160 }, { name: "Haaland", value: 150 }, { name: "Vinicius Jr", value: 120 }, 
-                { name: "Foden", value: 110 }, { name: "Pedri", value: 100 }, { name: "Bellingham", value: 90 },
-                { name: "Saka", value: 90 }, { name: "Musiala", value: 80 }
-            ],
-            "2024": [
-                { name: "Bellingham", value: 180 }, { name: "Haaland", value: 180 }, { name: "Mbappe", value: 180 }, 
-                { name: "Vinicius Jr", value: 150 }, { name: "Saka", value: 130 }, { name: "Foden", value: 130 },
-                { name: "Wirtz", value: 110 }, { name: "Musiala", value: 110 }
-            ],
-            "2025": [
-                { name: "Yamal", value: 200 }, { name: "Vinicius Jr", value: 200 }, { name: "Haaland", value: 180 }, 
-                { name: "Mbappe", value: 180 }, { name: "Bellingham", value: 180 }, { name: "Saka", value: 150 },
-                { name: "Wirtz", value: 140 }, { name: "Musiala", value: 140 }, { name: "Valverde", value: 130 },
-                { name: "Rodri", value: 130 }
-            ]
-        };
-
-        // Global State
-        let rawData = INITIAL_DATA;
+        // Estado Global
         let denseData = {};
         let timeline = [];
         let currentIndex = 0;
@@ -358,11 +364,12 @@
         let frameDuration = 20; 
         let animationStep = 0.01; 
         let intervalId = null;
-        let chartTitle = "Valor de Mercado";
-        let chartSubtitle = "Top Mundial (Millones €)";
-        
+        let editingPlayerName = null; 
+
+        // Referencias DOM
         const els = {
             chartContainer: document.getElementById('chart-container'),
+            emptyStateMsg: document.getElementById('empty-state-msg'),
             yearDisplay: document.getElementById('year-display'),
             timelineSlider: document.getElementById('timeline-slider'),
             currentYearMini: document.getElementById('current-year-mini'),
@@ -375,54 +382,144 @@
             toggleEditorBtn: document.getElementById('toggle-editor-btn'),
             closeEditorBtn: document.getElementById('close-editor-btn'),
             editorModal: document.getElementById('editor-modal'),
-            inputTitle: document.getElementById('input-title'),
-            inputSubtitle: document.getElementById('input-subtitle'),
+            
+            playerList: document.getElementById('player-list'),
+            searchPlayer: document.getElementById('search-player'),
+            btnNewPlayer: document.getElementById('btn-new-player'),
+            
+            // Upload
+            fileUpload: document.getElementById('file-upload'),
+            btnTriggerUpload: document.getElementById('btn-trigger-upload'),
+
+            editName: document.getElementById('edit-name'),
+            editColorText: document.getElementById('edit-color-text'),
+            colorPaletteContainer: document.getElementById('color-palette-container'),
+            
+            editImage: document.getElementById('edit-image'),
+            previewImage: document.getElementById('preview-image'),
+            previewPlaceholder: document.getElementById('preview-placeholder'),
+            
+            dataRowsContainer: document.getElementById('data-rows-container'),
+            newYearInput: document.getElementById('new-year-input'),
+            btnAddYear: document.getElementById('btn-add-year'),
+            
+            btnSavePlayer: document.getElementById('btn-save-player'),
+            btnDownloadJson: document.getElementById('btn-download-json'),
+            jsonSection: document.getElementById('json-section'),
             inputJson: document.getElementById('input-json'),
-            saveDataBtn: document.getElementById('save-data-btn'),
-            errorMsg: document.getElementById('error-msg'),
-            titleDisplay: document.getElementById('chart-title'),
-            subtitleDisplay: document.getElementById('chart-subtitle')
+            
+            editorModeTitle: document.getElementById('editor-mode-title'),
+            playerStatusBadge: document.getElementById('player-status-badge')
         };
 
         const barElements = {};
         const ROW_HEIGHT = 58;
         const OFFSET_TOP = 150;
 
+        // --- UTILS ---
         const getPlayerColor = (name) => {
             if (PLAYER_COLORS[name]) return PLAYER_COLORS[name];
-            let hash = 0;
-            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-            const h = Math.abs(hash % 360);
-            return `hsl(${h}, 70%, 50%)`;
+            return '#94a3b8'; // Gris por defecto si no se ha configurado
         };
 
-        // Lógica de URL con Proxy
         const getPlayerImageURL = (name, index = 0) => {
             const sources = PLAYER_IMAGES_SOURCES[name];
             if (!sources || !sources[index]) return null;
-            // Combinar proxy + url codificada + parámetros de recorte
             return PROXY + encodeURIComponent(sources[index]) + PARAMS;
         };
 
+        // --- LÓGICA DE DATOS ---
+
+        // Transforma el JSON del usuario (Entity -> Data) a interno (Year -> List)
+        function parseUserJson(userJson) {
+            const newRawData = {};
+            const allNames = new Set();
+
+            if (!Array.isArray(userJson)) throw new Error("El JSON debe ser un Array de objetos.");
+
+            userJson.forEach(entity => {
+                if (!entity.name) return;
+                const name = entity.name;
+                allNames.add(name);
+
+                // Soporte para array en "data", "history" o "values"
+                const history = entity.data || entity.history || entity.values || [];
+                
+                if (Array.isArray(history)) {
+                    history.forEach(point => {
+                        const year = String(point.year);
+                        const val = parseFloat(point.value);
+                        if (!newRawData[year]) newRawData[year] = [];
+                        newRawData[year].push({ name, value: val });
+                    });
+                }
+            });
+
+            return newRawData;
+        }
+
+        const preprocessData = (inputData) => {
+            const years = Object.keys(inputData).map(Number).sort((a, b) => a - b);
+            if (years.length === 0) return {};
+
+            const allPlayers = new Set();
+            Object.values(inputData).forEach(yearList => {
+                yearList.forEach(item => allPlayers.add(item.name));
+            });
+
+            const filledData = {};
+            const lastValues = {}; 
+            allPlayers.forEach(p => lastValues[p] = 0);
+
+            years.forEach(year => {
+                const currentYearData = inputData[year] || [];
+                const currentYearMap = {};
+                currentYearData.forEach(item => currentYearMap[item.name] = item.value);
+
+                const newYearList = [];
+                allPlayers.forEach(player => {
+                    let value = 0;
+                    if (currentYearMap[player] !== undefined) {
+                        value = currentYearMap[player];
+                    } else {
+                        value = lastValues[player]; // Fill forward
+                    }
+                    // No decrecer
+                    value = Math.max(value, lastValues[player]);
+                    lastValues[player] = value;
+
+                    if (value > 0) {
+                        newYearList.push({ name: player, value: value });
+                    }
+                });
+                filledData[year] = newYearList;
+            });
+            return filledData;
+        };
+
         const interpolateData = (data, step) => {
-            const years = Object.keys(data).map(Number).sort((a, b) => a - b);
+            const processedData = preprocessData(data);
+            const years = Object.keys(processedData).map(Number).sort((a, b) => a - b);
+            
+            if (years.length === 0) return {};
+
             const minYear = years[0];
             const maxYear = years[years.length - 1];
             const interpolated = {};
 
-            const allPlayers = new Set();
-            Object.values(data).forEach(yearList => {
-                yearList.forEach(item => allPlayers.add(JSON.stringify({ name: item.name })));
-            });
-            const playersList = Array.from(allPlayers).map(c => JSON.parse(c));
-
             const getRawValueAtYear = (y, name) => {
-                if (data[y]) {
-                    const found = data[y].find(i => i.name === name);
+                if (processedData[y]) {
+                    const found = processedData[y].find(i => i.name === name);
                     return found ? found.value : 0;
                 }
                 return 0;
             }
+            
+            const allPlayers = new Set();
+            Object.values(processedData).forEach(yearList => {
+                yearList.forEach(item => allPlayers.add(JSON.stringify({ name: item.name })));
+            });
+            const playersList = Array.from(allPlayers).map(c => JSON.parse(c));
 
             for (let y = minYear; y <= maxYear; y += step) {
                 const currentYearKey = y.toFixed(2); 
@@ -441,8 +538,7 @@
                         currentVal = startVal + (endVal - startVal) * progress;
                     }
                     
-                    if (currentVal <= 0 && endVal <= 0) return null;
-                    
+                    if (currentVal <= 0) return null;
                     return { name: player.name, value: currentVal };
                 }).filter(Boolean);
                 
@@ -452,20 +548,343 @@
         };
 
         function initData() {
+            // Comprobación de vacío
+            if (Object.keys(rawData).length === 0) {
+                denseData = {};
+                timeline = [];
+                els.emptyStateMsg.classList.remove('hidden');
+                els.playPauseBtn.disabled = true;
+                els.timelineSlider.disabled = true;
+                els.yearDisplay.innerText = "---";
+                els.currentYearMini.innerText = "---";
+                els.endYearMini.innerText = "---";
+                els.inputJson.value = "[]";
+                renderPlayerList();
+                return;
+            }
+
+            els.emptyStateMsg.classList.add('hidden');
+            els.playPauseBtn.disabled = false;
+            els.timelineSlider.disabled = false;
+
             denseData = interpolateData(rawData, animationStep);
             timeline = Object.keys(denseData).sort((a, b) => parseFloat(a) - parseFloat(b));
-            els.timelineSlider.max = timeline.length - 1;
-            els.endYearMini.innerText = Math.floor(parseFloat(timeline[0])); // Fix: use timeline[0] for start
             
-            // Initial Inputs
-            els.inputTitle.value = chartTitle;
-            els.inputSubtitle.value = chartSubtitle;
-            els.inputJson.value = JSON.stringify(rawData, null, 2);
-            els.titleDisplay.innerText = chartTitle;
-            els.subtitleDisplay.innerText = chartSubtitle;
+            if (timeline.length > 0) {
+                els.timelineSlider.max = timeline.length - 1;
+                els.endYearMini.innerText = Math.floor(parseFloat(timeline[timeline.length - 1])); 
+                els.currentYearMini.innerText = Math.floor(parseFloat(timeline[0]));
+            }
+            
+            // Exportar JSON interno como formato simple para el usuario (reversa)
+            const exportData = [];
+            const allNames = getAllPlayerNames();
+            allNames.forEach(name => {
+                const history = [];
+                Object.keys(rawData).sort().forEach(y => {
+                    const entry = rawData[y].find(p => p.name === name);
+                    if (entry) history.push({ year: parseInt(y), value: entry.value });
+                });
+                if (history.length > 0) {
+                    exportData.push({ name: name, data: history });
+                }
+            });
+            els.inputJson.value = JSON.stringify(exportData, null, 2);
         }
 
+        // --- FILE UPLOAD ---
+        els.btnTriggerUpload.onclick = () => els.fileUpload.click();
+        
+        els.fileUpload.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const json = JSON.parse(evt.target.result);
+                    rawData = parseUserJson(json);
+                    
+                    // Resetear configuraciones visuales si se quiere empezar limpio
+                    // O mantenerlas por si coinciden nombres? Mantenemos por ahora.
+                    
+                    initData();
+                    currentIndex = 0;
+                    renderFrame();
+                    renderPlayerList();
+                    alert("Datos importados correctamente.");
+                } catch (err) {
+                    alert("Error al leer el JSON: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+            // Limpiar input
+            e.target.value = '';
+        };
+
+        // --- GESTIÓN DE UI ---
+
+        function renderColorPalette() {
+            els.colorPaletteContainer.innerHTML = '';
+            Object.entries(COLOR_PALETTE).forEach(([name, shades]) => {
+                shades.forEach(color => {
+                    const swatch = document.createElement('div');
+                    swatch.className = 'color-swatch';
+                    swatch.style.backgroundColor = color;
+                    swatch.dataset.color = color;
+                    swatch.onclick = () => selectColor(color);
+                    els.colorPaletteContainer.appendChild(swatch);
+                });
+            });
+        }
+
+        function selectColor(color) {
+            els.editColorText.value = color;
+            const swatches = document.querySelectorAll('.color-swatch');
+            swatches.forEach(s => {
+                if (s.dataset.color === color) s.classList.add('selected');
+                else s.classList.remove('selected');
+            });
+        }
+
+        function renderDataRows(playerName) {
+            els.dataRowsContainer.innerHTML = '';
+            if (!playerName) return;
+
+            const years = Object.keys(rawData).sort();
+            const playerYears = [];
+
+            years.forEach(year => {
+                const entry = rawData[year].find(p => p.name === playerName);
+                if (entry) {
+                    playerYears.push({ year, value: entry.value });
+                }
+            });
+
+            if (playerYears.length === 0) {
+                 els.dataRowsContainer.innerHTML = '<div class="p-2 text-center text-xs text-slate-400">Sin datos registrados</div>';
+                 return;
+            }
+
+            playerYears.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-4 gap-2 items-center p-1 border-b border-slate-100 bg-white hover:bg-slate-50 transition-colors rounded';
+                row.innerHTML = `
+                    <div class="col-span-1 text-center font-mono text-xs text-slate-600 font-bold">${item.year}</div>
+                    <div class="col-span-2">
+                        <input type="number" value="${item.value}" class="w-full text-right p-1 text-xs border border-slate-200 rounded font-bold text-slate-700 focus:ring-1 focus:ring-blue-500 outline-none" 
+                        onchange="updateDataValue('${item.year}', this.value)">
+                    </div>
+                    <div class="col-span-1 flex justify-center">
+                        <button class="text-slate-400 hover:text-red-500 transition-colors p-1" onclick="deleteDataYear('${item.year}')">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `;
+                els.dataRowsContainer.appendChild(row);
+            });
+            lucide.createIcons();
+        }
+
+        window.updateDataValue = (year, value) => {
+            if (!editingPlayerName) return;
+            const val = parseFloat(value);
+            if (isNaN(val)) return;
+            const list = rawData[year];
+            const entry = list.find(p => p.name === editingPlayerName);
+            if (entry) entry.value = val;
+        };
+
+        window.deleteDataYear = (year) => {
+             if (!editingPlayerName) return;
+             if(!confirm(`¿Borrar datos del año ${year}?`)) return;
+             rawData[year] = rawData[year].filter(p => p.name !== editingPlayerName);
+             if (rawData[year].length === 0) delete rawData[year];
+             renderDataRows(editingPlayerName);
+        };
+
+        function getAllPlayerNames() {
+            const names = new Set();
+            Object.values(rawData).forEach(list => list.forEach(i => names.add(i.name)));
+            return Array.from(names).sort();
+        }
+
+        function renderPlayerList(filter = "") {
+            els.playerList.innerHTML = "";
+            const players = getAllPlayerNames();
+            
+            if (players.length === 0) {
+                els.playerList.innerHTML = `
+                    <div class="p-8 text-center text-slate-400 text-sm">
+                        <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                        <p>Sin datos.</p>
+                        <p class="text-xs mt-1">Importa un JSON o añade manualmente.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            players.forEach(name => {
+                if (filter && !name.toLowerCase().includes(filter.toLowerCase())) return;
+
+                const color = getPlayerColor(name);
+                const btn = document.createElement("button");
+                btn.className = "player-chip w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-3 border border-transparent";
+                if (editingPlayerName === name) btn.classList.add("active");
+                
+                btn.innerHTML = `
+                    <div class="w-3 h-3 rounded-full shadow-sm" style="background-color: ${color}"></div>
+                    <span class="truncate">${name}</span>
+                `;
+                
+                btn.onclick = () => loadPlayerIntoEditor(name);
+                els.playerList.appendChild(btn);
+            });
+        }
+
+        function loadPlayerIntoEditor(name) {
+            editingPlayerName = name;
+            els.editorModeTitle.innerText = "Editar Barra";
+            els.playerStatusBadge.classList.add("hidden");
+            
+            // Populate Form
+            els.editName.value = name;
+            els.editName.readOnly = true; 
+            els.editName.classList.add("bg-slate-50", "text-slate-500");
+            
+            const color = getPlayerColor(name);
+            selectColor(color);
+
+            const imgSrc = PLAYER_IMAGES_SOURCES[name] ? PLAYER_IMAGES_SOURCES[name][0] : "";
+            els.editImage.value = imgSrc;
+            updateImagePreview(imgSrc);
+
+            renderDataRows(name);
+            renderPlayerList(els.searchPlayer.value);
+        }
+
+        function clearEditor() {
+            editingPlayerName = null;
+            els.editorModeTitle.innerText = "Nueva Barra";
+            els.playerStatusBadge.classList.remove("hidden");
+            
+            els.editName.value = "";
+            els.editName.readOnly = false;
+            els.editName.classList.remove("bg-slate-50", "text-slate-500");
+            
+            selectColor('#94a3b8'); // Gris por defecto
+            
+            els.editImage.value = "";
+            updateImagePreview("");
+            
+            els.dataRowsContainer.innerHTML = '<div class="p-4 text-center text-xs text-slate-400 italic">Crea la barra para añadir datos</div>';
+            
+            renderPlayerList(els.searchPlayer.value);
+        }
+
+        function updateImagePreview(url) {
+            if (url) {
+                els.previewImage.src = PROXY + encodeURIComponent(url) + PARAMS;
+                els.previewImage.classList.remove("hidden");
+                els.previewPlaceholder.classList.add("hidden");
+            } else {
+                els.previewImage.classList.add("hidden");
+                els.previewPlaceholder.classList.remove("hidden");
+            }
+        }
+
+        // --- EVENTOS EDITOR ---
+
+        els.btnNewPlayer.onclick = () => {
+            clearEditor();
+            els.editName.focus();
+        };
+
+        els.searchPlayer.oninput = (e) => {
+            renderPlayerList(e.target.value);
+        };
+
+        els.editImage.onchange = (e) => {
+            updateImagePreview(e.target.value);
+        };
+
+        els.btnAddYear.onclick = () => {
+            if (!editingPlayerName) return alert("Primero crea o selecciona una barra.");
+            
+            const year = els.newYearInput.value;
+            if (!year) return;
+
+            if (!rawData[year]) rawData[year] = [];
+            
+            const exists = rawData[year].find(p => p.name === editingPlayerName);
+            if (!exists) {
+                rawData[year].push({ name: editingPlayerName, value: 0 });
+                renderDataRows(editingPlayerName);
+                setTimeout(() => {
+                    els.dataRowsContainer.scrollTop = els.dataRowsContainer.scrollHeight;
+                }, 50);
+            } else {
+                alert(`El año ${year} ya existe.`);
+            }
+            els.newYearInput.value = '';
+        };
+
+        els.btnSavePlayer.onclick = () => {
+            const name = els.editName.value;
+            const color = els.editColorText.value;
+            const img = els.editImage.value;
+
+            if (!name) return alert("El nombre es obligatorio.");
+
+            // 1. Guardar Color y Foto
+            PLAYER_COLORS[name] = color;
+            if (img) PLAYER_IMAGES_SOURCES[name] = [img];
+
+            // 2. Si es nueva, inicializar
+            const allNames = getAllPlayerNames();
+            if (!allNames.includes(name)) {
+                const firstYear = Object.keys(rawData).sort()[0];
+                if (firstYear) {
+                    rawData[firstYear].push({ name: name, value: 0 }); 
+                } else {
+                    // Si no hay años aun (tabla vacía), creamos el año actual
+                    const currentYear = new Date().getFullYear().toString();
+                    rawData[currentYear] = [{ name: name, value: 0 }];
+                }
+            }
+
+            initData(); // Recalcular todo
+            
+            // Feedback
+            const prevText = els.btnSavePlayer.innerHTML;
+            els.btnSavePlayer.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> Guardado`;
+            els.btnSavePlayer.classList.add("bg-green-600");
+            setTimeout(() => {
+                els.btnSavePlayer.innerHTML = prevText;
+                els.btnSavePlayer.classList.remove("bg-green-600");
+                lucide.createIcons();
+            }, 1000);
+
+            editingPlayerName = name; 
+            renderPlayerList(els.searchPlayer.value);
+            
+            // Forzar render frame
+            barElements[name] = null;
+            els.chartContainer.innerHTML = '';
+            for (let key in barElements) delete barElements[key];
+            renderFrame();
+        };
+
+        els.btnDownloadJson.onclick = () => {
+            els.jsonSection.classList.toggle("hidden");
+        };
+
+        // --- RENDERIZADO DEL CHART ---
+
         function renderFrame() {
+            if (timeline.length === 0) return;
+            
             const currentKey = timeline[currentIndex];
             if (!currentKey) return; 
             const items = [...denseData[currentKey]].sort((a, b) => b.value - a.value);
@@ -480,7 +899,6 @@
                 rank: index,
                 barWidth: (item.value / maxValue) * 100,
                 color: getPlayerColor(item.name),
-                // Empezamos probando la primera fuente
                 imageUrl: getPlayerImageURL(item.name, 0)
             }));
             const activeNames = new Set(activeItems.map(i => i.name));
@@ -498,8 +916,8 @@
                             <div class="bar-fill h-full rounded-r-full shadow-lg flex items-center pl-2 overflow-visible whitespace-nowrap relative bar-transition border border-white/40" style="transition-duration: ${frameDuration}ms;">
                                 <div class="party-logo-container w-10 h-10 rounded-full absolute -right-5 border-2 border-white shadow-md z-10 bg-white overflow-hidden hidden ring-2 ring-black/20">
                                     <img src="" referrerpolicy="no-referrer" class="player-face w-full h-full" 
-                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                                         onload="this.style.display='block'; this.nextElementSibling.style.display='none';"
+                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                        onload="this.style.display='block'; this.nextElementSibling.style.display='none';"
                                     >
                                     <div class="logo-fallback hidden" style="color:${getPlayerColor(item.name)}">${item.name.substring(0,2)}</div>
                                 </div>
@@ -525,10 +943,11 @@
                 const imgEl = containerEl.querySelector('img');
                 const fallbackEl = containerEl.querySelector('.logo-fallback');
 
+                // Update Image
                 if (item.imageUrl) {
-                    // Solo actualizamos si cambia la URL base para evitar parpadeos
-                    if (!imgEl.src.includes(encodeURIComponent(PLAYER_IMAGES_SOURCES[item.name][0]))) {
+                    if (imgEl.dataset.src !== item.imageUrl) {
                         imgEl.src = item.imageUrl;
+                        imgEl.dataset.src = item.imageUrl;
                     }
                     containerEl.classList.remove('hidden');
                 } else {
@@ -536,9 +955,10 @@
                     fallbackEl.style.display = 'flex';
                     containerEl.classList.remove('hidden');
                 }
+                fallbackEl.style.color = item.color;
 
                 const valLabel = el.querySelector('.value-label');
-                valLabel.innerText = Math.round(item.value) + " M€";
+                valLabel.innerText = Math.round(item.value);
             });
 
             Object.keys(barElements).forEach(name => {
@@ -617,39 +1037,18 @@
 
         els.toggleEditorBtn.addEventListener('click', () => {
             els.editorModal.classList.remove('hidden');
+            renderPlayerList(); 
+            if(!editingPlayerName) clearEditor(); 
         });
 
         els.closeEditorBtn.addEventListener('click', () => {
             els.editorModal.classList.add('hidden');
         });
 
-        els.saveDataBtn.addEventListener('click', () => {
-            try {
-                const parsed = JSON.parse(els.inputJson.value);
-                const keys = Object.keys(parsed).sort();
-                if (keys.length === 0) throw new Error("El JSON está vacío.");
-                rawData = parsed;
-                chartTitle = els.inputTitle.value;
-                chartSubtitle = els.inputSubtitle.value;
-                els.titleDisplay.innerText = chartTitle;
-                els.subtitleDisplay.innerText = chartSubtitle;
-                initData();
-                currentIndex = 0;
-                pauseGame();
-                els.chartContainer.innerHTML = '';
-                for (let key in barElements) delete barElements[key];
-                renderFrame();
-                els.errorMsg.classList.add('hidden');
-                els.editorModal.classList.add('hidden');
-            } catch (e) {
-                els.errorMsg.innerText = "Error: " + e.message;
-                els.errorMsg.classList.remove('hidden');
-            }
-        });
-
+        // Inicio
+        renderColorPalette();
         lucide.createIcons();
-        initData();
-        renderFrame();
+        initData(); // Inicia vacío
     </script>
 </body>
 </html>
