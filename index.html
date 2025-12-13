@@ -11,8 +11,6 @@
     
     <style>
         /* --- Transiciones Inteligentes --- */
-        /* Solo animamos 'top' con CSS para que los intercambios de posición sean suaves.
-           El 'width' se controla por JS a 60fps para máxima precisión sin lag. */
         .bar-item {
             transition: top 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
         }
@@ -56,6 +54,7 @@
                 linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
             background-size: 40px 40px;
             pointer-events: none;
+            z-index: 1; /* Encima de la imagen de fondo usuario */
         }
 
         /* Estilo para el fallback de texto en el logo */
@@ -88,6 +87,12 @@
             background-color: #3b82f6; /* blue-500 */
             color: white;
             border-color: #2563eb;
+        }
+        
+        .scene-btn.active {
+            background-color: #e0f2fe; /* blue-100 */
+            color: #0284c7; /* sky-600 */
+            border-color: #7dd3fc;
         }
 
         /* Estilos para la paleta de colores */
@@ -146,34 +151,35 @@
             <!-- Modal Body (Two Columns) -->
             <div class="flex flex-col md:flex-row h-full overflow-hidden bg-slate-50">
                 
-                <!-- Left Column: Import & List -->
+                <!-- Left Column: Navigation & List -->
                 <div class="w-full md:w-1/3 bg-white border-r border-slate-200 flex flex-col h-full shrink-0">
                     
-                    <!-- Import Section -->
-                    <div class="p-4 bg-blue-50 border-b border-blue-100">
-                        <input type="file" id="file-upload" class="hidden" accept=".json">
-                        <button id="btn-trigger-upload" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95">
-                            <i data-lucide="upload" class="w-4 h-4"></i> Importar JSON
+                    <!-- Top Actions -->
+                    <div class="p-4 bg-slate-50 border-b border-slate-100 space-y-2">
+                        <!-- Scene Settings Button -->
+                        <button id="btn-edit-scene" class="scene-btn w-full py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm">
+                            <i data-lucide="image" class="w-4 h-4 text-purple-500"></i> Editar Fondo y Textos
                         </button>
-                        <p class="text-[10px] text-blue-800 mt-2 text-center leading-tight">
-                            Formato: Array de objetos con "name" y lista "data" ({year, value}).
-                        </p>
+                        
+                        <div class="flex gap-2">
+                             <button id="btn-trigger-upload" class="flex-grow py-2 bg-blue-50 border border-blue-100 text-blue-700 hover:bg-blue-100 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors">
+                                <i data-lucide="upload" class="w-3 h-3"></i> Importar JSON
+                            </button>
+                             <input type="file" id="file-upload" class="hidden" accept=".json">
+                        </div>
                     </div>
 
-                    <div class="p-3 border-b border-slate-100 bg-slate-50/50">
+                    <!-- Search -->
+                    <div class="p-3 border-b border-slate-100 bg-white">
                         <div class="relative">
                             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
-                            <input type="text" id="search-player" placeholder="Filtrar..." class="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="text" id="search-player" placeholder="Buscar barra..." class="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                     </div>
                     
+                    <!-- List -->
                     <div id="player-list" class="flex-grow overflow-y-auto p-2 space-y-1 custom-scrollbar">
                         <!-- Chips injected here -->
-                        <div class="p-8 text-center text-slate-400 text-sm">
-                            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-                            <p>Sin datos.</p>
-                            <p class="text-xs">Importa un JSON o añade manualmente.</p>
-                        </div>
                     </div>
                     
                     <div class="p-4 border-t border-slate-100 bg-slate-50">
@@ -183,111 +189,152 @@
                     </div>
                 </div>
 
-                <!-- Right Column: Editor Form -->
-                <div class="w-full md:w-2/3 overflow-y-auto custom-scrollbar p-6 md:p-8 flex flex-col">
+                <!-- Right Column: Editors (Swappable) -->
+                <div class="w-full md:w-2/3 overflow-hidden bg-white h-full relative">
                     
-                    <!-- Editor Title -->
-                    <div class="mb-6 flex justify-between items-end shrink-0">
-                        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                            <span id="editor-mode-title">Editar Barra</span>
-                        </h2>
-                        <span id="player-status-badge" class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded uppercase hidden">Nuevo</span>
-                    </div>
-
-                    <!-- Main Form -->
-                    <div class="space-y-6 flex-grow">
+                    <!-- 1. PLAYER EDITOR (Default) -->
+                    <div id="player-editor-wrapper" class="h-full flex flex-col overflow-y-auto custom-scrollbar p-6 md:p-8">
                         
-                        <!-- 1. Visual Properties -->
-                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-                            <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2">
-                                <i data-lucide="palette" class="w-4 h-4 text-blue-600"></i> Personalización (Manual)
-                            </h4>
-                            
-                            <div class="grid grid-cols-1 gap-4">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">Nombre (Etiqueta)</label>
-                                    <input type="text" id="edit-name" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">Icono / URL Imagen</label>
-                                    <div class="flex gap-2">
-                                        <input type="text" id="edit-image" placeholder="https://ejemplo.com/logo.png" class="flex-grow p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono text-xs">
-                                        <div class="w-10 h-10 shrink-0 rounded-full border border-slate-200 bg-slate-100 overflow-hidden relative">
-                                            <img id="preview-image" src="" class="w-full h-full object-cover hidden">
-                                            <i data-lucide="image" class="w-5 h-5 text-slate-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" id="preview-placeholder"></i>
+                        <!-- Header -->
+                        <div class="mb-6 flex justify-between items-end shrink-0">
+                            <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                                <span id="editor-mode-title">Editar Barra</span>
+                            </h2>
+                            <span id="player-status-badge" class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded uppercase hidden">Nuevo</span>
+                        </div>
+
+                        <div class="space-y-6 flex-grow">
+                            <!-- Visuals -->
+                            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2">
+                                    <i data-lucide="palette" class="w-4 h-4 text-blue-600"></i> Apariencia
+                                </h4>
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-500 mb-1.5">Nombre</label>
+                                        <input type="text" id="edit-name" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-500 mb-1.5">Icono / URL Imagen</label>
+                                        <div class="flex gap-2">
+                                            <input type="text" id="edit-image" placeholder="https://..." class="flex-grow p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono text-xs">
+                                            <div class="w-10 h-10 shrink-0 rounded-full border border-slate-200 bg-slate-100 overflow-hidden relative">
+                                                <img id="preview-image" src="" class="w-full h-full object-cover hidden">
+                                                <i data-lucide="image" class="w-5 h-5 text-slate-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" id="preview-placeholder"></i>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-500 mb-2">Color de Barra</label>
-                                <input type="hidden" id="edit-color-text">
-                                <div id="color-palette-container" class="grid grid-cols-5 gap-y-2 gap-x-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
-                                    <!-- Colors generated by JS -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-2">Color</label>
+                                    <input type="hidden" id="edit-color-text">
+                                    <div id="color-palette-container" class="grid grid-cols-5 gap-y-2 gap-x-1 p-3 bg-slate-50 rounded-lg border border-slate-100"></div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- 2. Data Entry -->
-                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-                            <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-                                <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                    <i data-lucide="bar-chart" class="w-4 h-4 text-blue-600"></i> Datos Históricos
-                                </h4>
-                                <div class="flex gap-2">
-                                     <input type="number" id="new-year-input" placeholder="Año" class="w-20 p-1.5 text-xs border border-slate-300 rounded text-center">
-                                     <button id="btn-add-year" class="bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs px-3 py-1.5 rounded font-bold transition-colors">
-                                        + Añadir Año
-                                     </button>
+                            <!-- Data -->
+                            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                                    <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                        <i data-lucide="bar-chart" class="w-4 h-4 text-blue-600"></i> Datos Históricos
+                                    </h4>
+                                    <div class="flex gap-2">
+                                         <input type="number" id="new-year-input" placeholder="Año" class="w-20 p-1.5 text-xs border border-slate-300 rounded text-center">
+                                         <button id="btn-add-year" class="bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs px-3 py-1.5 rounded font-bold transition-colors">+ Añadir</button>
+                                    </div>
                                 </div>
+                                <div class="bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
+                                    <div class="grid grid-cols-4 bg-slate-100 p-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200">
+                                        <div class="col-span-1">Año</div>
+                                        <div class="col-span-2">Valor</div>
+                                        <div class="col-span-1">Acción</div>
+                                    </div>
+                                    <div id="data-rows-container" class="max-h-60 overflow-y-auto custom-scrollbar p-1 space-y-1"></div>
+                                </div>
+                            </div>
+
+                            <!-- Save -->
+                            <div class="flex gap-3 pt-4 pb-8">
+                                <button id="btn-save-player" class="flex-grow bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl transform active:scale-[0.98] flex justify-center items-center gap-2">
+                                    <i data-lucide="save" class="w-4 h-4"></i> Guardar Cambios
+                                </button>
+                                <button id="btn-download-json" class="px-4 py-3 border border-slate-300 text-slate-600 rounded-xl font-medium hover:bg-slate-50 transition-colors">
+                                    <i data-lucide="code" class="w-5 h-5"></i>
+                                </button>
                             </div>
                             
-                            <div class="bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
-                                <div class="grid grid-cols-4 bg-slate-100 p-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200">
-                                    <div class="col-span-1">Año</div>
-                                    <div class="col-span-2">Valor</div>
-                                    <div class="col-span-1">Acción</div>
-                                </div>
-                                <div id="data-rows-container" class="max-h-60 overflow-y-auto custom-scrollbar p-1 space-y-1">
-                                    <div class="p-4 text-center text-xs text-slate-400 italic">Selecciona un elemento para editar sus datos</div>
-                                </div>
+                            <div id="json-section" class="hidden pb-8">
+                                <label class="block text-xs font-bold text-slate-500 mb-1">JSON Actual</label>
+                                <textarea id="input-json" class="w-full h-32 border border-slate-300 rounded p-2 font-mono text-[10px] focus:ring-2 focus:ring-blue-500 outline-none resize-none bg-slate-900 text-blue-400"></textarea>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Actions -->
-                        <div class="flex gap-3 pt-4 pb-8">
-                            <button id="btn-save-player" class="flex-grow bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl transform active:scale-[0.98] flex justify-center items-center gap-2">
-                                <i data-lucide="save" class="w-4 h-4"></i> Guardar Cambios
-                            </button>
-                            <button id="btn-download-json" class="px-4 py-3 border border-slate-300 text-slate-600 rounded-xl font-medium hover:bg-slate-50 transition-colors" title="Ver JSON Actual">
-                                <i data-lucide="code" class="w-5 h-5"></i>
-                            </button>
+                    <!-- 2. SCENE EDITOR (Hidden) -->
+                    <div id="scene-editor-wrapper" class="hidden h-full flex flex-col overflow-y-auto custom-scrollbar p-6 md:p-8 bg-slate-50/50">
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                                <i data-lucide="monitor" class="w-6 h-6 text-purple-600"></i> Configuración de Escena
+                            </h2>
+                            <p class="text-sm text-slate-500 mt-1">Personaliza los textos y el fondo del gráfico.</p>
                         </div>
 
-                        <!-- JSON RAW Area -->
-                        <div id="json-section" class="hidden pb-8">
-                            <label class="block text-xs font-bold text-slate-500 mb-1">Estado Actual (JSON)</label>
-                            <textarea id="input-json" class="w-full h-32 border border-slate-300 rounded p-2 font-mono text-[10px] focus:ring-2 focus:ring-blue-500 outline-none resize-none bg-slate-900 text-blue-400"></textarea>
+                        <div class="space-y-6 max-w-lg">
+                            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+                                <h4 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Textos del Gráfico</h4>
+                                
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Título Principal</label>
+                                    <input type="text" id="scene-title-input" value="Ranking" class="w-full p-3 border border-slate-300 rounded-lg font-bold text-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Ej: Top Goleadores">
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Subtítulo</label>
+                                    <input type="text" id="scene-subtitle-input" value="Histórico" class="w-full p-3 border border-slate-300 rounded-lg font-medium text-slate-600 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Ej: 1990 - 2025">
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+                                <h4 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Fondo Personalizado</h4>
+                                
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">URL Imagen de Fondo</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" id="scene-bg-input" class="flex-grow p-3 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-500 outline-none" placeholder="https://...">
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 mt-2 leading-relaxed">
+                                        La imagen se superpondrá al fondo actual con transparencia. Deja este campo vacío para usar el fondo por defecto.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-blue-50 text-blue-800 rounded-lg text-xs border border-blue-100 flex gap-3 items-start">
+                                <i data-lucide="info" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                                <p>Los cambios en los textos y el fondo se aplican automáticamente en tiempo real mientras escribes.</p>
+                            </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Main Visualization Area -->
-    <div class="w-full max-w-[400px] aspect-[9/16] chart-bg rounded-[2.5rem] shadow-2xl overflow-hidden relative border-8 border-slate-800 ring-4 ring-slate-700/50">
+    <div id="visualization-area" class="w-full max-w-[400px] aspect-[9/16] chart-bg rounded-[2.5rem] shadow-2xl overflow-hidden relative border-8 border-slate-800 ring-4 ring-slate-700/50">
         
+        <!-- User Background Layer (New) -->
+        <div id="user-bg-layer" class="absolute inset-0 bg-cover bg-center pointer-events-none transition-opacity duration-500" style="z-index: 0; opacity: 0.4;"></div>
+
         <!-- Internal Header -->
         <div class="absolute top-5 left-0 right-0 px-8 py-6 z-20 pointer-events-none flex justify-end">
             <span id="year-display" class="text-7xl font-black text-white/90 tracking-tighter transition-all duration-300 drop-shadow-lg" style="text-shadow: 0 4px 12px rgba(0,0,0,0.4);">---</span>
         </div>
 
         <!-- Background Title -->
-        <div class="absolute bottom-24 left-6 right-6 select-none pointer-events-none z-0 text-right">
-            <h2 id="chart-title" class="text-3xl font-black text-white leading-tight drop-shadow-md">Ranking</h2>
-            <p id="chart-subtitle" class="text-lg text-blue-200 font-medium drop-shadow-sm">Histórico</p>
+        <div class="absolute bottom-24 left-6 right-6 select-none pointer-events-none text-right" style="z-index: 2;">
+            <h2 id="chart-title" class="text-3xl font-black text-white leading-tight drop-shadow-md transition-all">Ranking</h2>
+            <p id="chart-subtitle" class="text-lg text-blue-200 font-medium drop-shadow-sm transition-all">Histórico</p>
         </div>
 
         <!-- Chart Area Container -->
@@ -299,13 +346,12 @@
             </div>
         </div>
 
-        <!-- Timeline Slider (Dynamic) -->
+        <!-- Timeline Slider -->
         <div class="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-lg p-4 border-t border-white/10 z-30 pb-6">
             <div class="flex items-center justify-between mb-2">
                  <span id="current-year-mini" class="text-xs font-bold text-white">---</span>
                  <span id="end-year-mini" class="text-xs font-bold text-white/70">---</span>
             </div>
-            <!-- Slider now maps to float year for precision -->
             <input type="range" id="timeline-slider" min="0" max="100" step="0.01" value="0" class="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-blue-400 block" disabled>
         </div>
     </div>
@@ -321,7 +367,6 @@
             <i id="pause-icon" data-lucide="pause" class="w-8 h-8 fill-current hidden"></i>
         </button>
 
-        <!-- New Duration Control -->
         <div class="flex flex-col items-end">
             <span class="text-[10px] uppercase font-bold text-slate-400 mb-1">Segundos por Año</span>
             <div class="flex items-center gap-2 bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700">
@@ -332,16 +377,14 @@
     </div>
 
     <script>
-        // --- ESTADO INICIAL VACÍO ---
-        let PLAYER_COLORS = {};        // Mapa Nombre -> Hex
-        let PLAYER_IMAGES_SOURCES = {}; // Mapa Nombre -> [URL]
-        let rawData = {};              // { "2000": [{name, value}], ... }
+        // --- ESTADO INICIAL ---
+        let PLAYER_COLORS = {};
+        let PLAYER_IMAGES_SOURCES = {}; 
+        let rawData = {};              
         
-        // Proxy para imágenes
         const PROXY = "https://wsrv.nl/?url=";
         const PARAMS = "&w=200&h=200&fit=cover&a=top";
 
-        // --- PALETA DE COLORES ---
         const COLOR_PALETTE = {
             Gris:    ['#f1f5f9', '#cbd5e1', '#94a3b8', '#64748b', '#334155'], 
             Rojo:    ['#fee2e2', '#fca5a5', '#ef4444', '#b91c1c', '#7f1d1d'], 
@@ -356,16 +399,14 @@
         };
 
         // Estado Global de Animación
-        let processedData = {}; // Data filled forward
+        let processedData = {};
         let yearKeys = [];
         let minYear = 0;
         let maxYear = 0;
-        
-        let currentYear = 0; // Float
+        let currentYear = 0;
         let isPlaying = false;
         let lastTimestamp = 0;
         let animationFrameId = null;
-        
         let editingPlayerName = null; 
 
         // Referencias DOM
@@ -385,38 +426,95 @@
             closeEditorBtn: document.getElementById('close-editor-btn'),
             editorModal: document.getElementById('editor-modal'),
             
+            // Left Col
             playerList: document.getElementById('player-list'),
             searchPlayer: document.getElementById('search-player'),
             btnNewPlayer: document.getElementById('btn-new-player'),
-            
-            // Upload
+            btnEditScene: document.getElementById('btn-edit-scene'), // New Button
             fileUpload: document.getElementById('file-upload'),
             btnTriggerUpload: document.getElementById('btn-trigger-upload'),
 
+            // Right Col - Wrappers
+            playerEditorWrapper: document.getElementById('player-editor-wrapper'),
+            sceneEditorWrapper: document.getElementById('scene-editor-wrapper'),
+
+            // Player Editor Inputs
             editName: document.getElementById('edit-name'),
             editColorText: document.getElementById('edit-color-text'),
             colorPaletteContainer: document.getElementById('color-palette-container'),
-            
             editImage: document.getElementById('edit-image'),
             previewImage: document.getElementById('preview-image'),
             previewPlaceholder: document.getElementById('preview-placeholder'),
-            
             dataRowsContainer: document.getElementById('data-rows-container'),
             newYearInput: document.getElementById('new-year-input'),
             btnAddYear: document.getElementById('btn-add-year'),
-            
             btnSavePlayer: document.getElementById('btn-save-player'),
             btnDownloadJson: document.getElementById('btn-download-json'),
             jsonSection: document.getElementById('json-section'),
             inputJson: document.getElementById('input-json'),
-            
             editorModeTitle: document.getElementById('editor-mode-title'),
-            playerStatusBadge: document.getElementById('player-status-badge')
+            playerStatusBadge: document.getElementById('player-status-badge'),
+
+            // Scene Editor Inputs
+            sceneTitleInput: document.getElementById('scene-title-input'),
+            sceneSubtitleInput: document.getElementById('scene-subtitle-input'),
+            sceneBgInput: document.getElementById('scene-bg-input'),
+
+            // Chart Visual Elements
+            chartTitle: document.getElementById('chart-title'),
+            chartSubtitle: document.getElementById('chart-subtitle'),
+            userBgLayer: document.getElementById('user-bg-layer')
         };
 
         const barElements = {};
         const ROW_HEIGHT = 58;
         const OFFSET_TOP = 150;
+
+        // --- SCENE SETTINGS LOGIC ---
+        function switchEditorMode(mode) {
+            if (mode === 'scene') {
+                els.playerEditorWrapper.classList.add('hidden');
+                els.sceneEditorWrapper.classList.remove('hidden');
+                
+                // Styles for button
+                els.btnEditScene.classList.add('active', 'border-blue-200');
+                els.btnEditScene.classList.remove('bg-white', 'text-slate-700');
+                
+                // Deselect players in list
+                document.querySelectorAll('.player-chip').forEach(el => el.classList.remove('active'));
+                editingPlayerName = null;
+            } else {
+                els.sceneEditorWrapper.classList.add('hidden');
+                els.playerEditorWrapper.classList.remove('hidden');
+                
+                // Reset button style
+                els.btnEditScene.classList.remove('active', 'border-blue-200');
+                els.btnEditScene.classList.add('bg-white', 'text-slate-700');
+            }
+        }
+
+        els.btnEditScene.addEventListener('click', () => switchEditorMode('scene'));
+
+        // Real-time Text Updates
+        els.sceneTitleInput.addEventListener('input', (e) => {
+            els.chartTitle.innerText = e.target.value || "Ranking";
+        });
+        
+        els.sceneSubtitleInput.addEventListener('input', (e) => {
+            els.chartSubtitle.innerText = e.target.value || "";
+        });
+
+        // Background Image Update
+        els.sceneBgInput.addEventListener('input', (e) => {
+            const url = e.target.value.trim();
+            if (url) {
+                // Use Proxy for safety if needed, or direct
+                // Let's use direct first, user can check if it works
+                els.userBgLayer.style.backgroundImage = `url('${url}')`;
+            } else {
+                els.userBgLayer.style.backgroundImage = 'none';
+            }
+        });
 
         // --- UTILS ---
         const getPlayerColor = (name) => PLAYER_COLORS[name] || '#94a3b8';
@@ -426,28 +524,22 @@
             return PROXY + encodeURIComponent(sources[index]) + PARAMS;
         };
 
-        // --- PRE-PROCESAMIENTO ---
-        // 1. Fill Forward (no decrecer)
-        // 2. Estructura optimizada para acceso rápido
+        // --- DATA PROCESSING & ANIMATION ENGINE (Same as before) ---
         const preprocessData = (inputData) => {
             const years = Object.keys(inputData).map(Number).sort((a, b) => a - b);
             if (years.length === 0) return {};
-
             const allPlayers = new Set();
             Object.values(inputData).forEach(yearList => yearList.forEach(item => allPlayers.add(item.name)));
-
             const filledData = {};
             const lastValues = {}; 
             allPlayers.forEach(p => lastValues[p] = 0);
-
             years.forEach(year => {
                 const currentMap = {};
                 (inputData[year] || []).forEach(item => currentMap[item.name] = item.value);
-
                 const newYearList = [];
                 allPlayers.forEach(player => {
                     let val = currentMap[player] !== undefined ? currentMap[player] : lastValues[player];
-                    val = Math.max(val, lastValues[player]); // No decrecer
+                    val = Math.max(val, lastValues[player]);
                     lastValues[player] = val;
                     if (val > 0) newYearList.push({ name: player, value: val });
                 });
@@ -456,22 +548,12 @@
             return filledData;
         };
 
-        // --- MOTOR DE INTERPOLACIÓN ON-THE-FLY ---
         function getDataAtYear(yearFloat) {
-            // Encontrar year previo y siguiente
-            // yearKeys está ordenado
             if (yearKeys.length === 0) return [];
-            
-            // Si estamos antes del inicio
             if (yearFloat <= minYear) return processedData[minYear];
-            // Si estamos después del final
             if (yearFloat >= maxYear) return processedData[maxYear];
-
-            // Buscar índices
             let prevYear = minYear;
             let nextYear = maxYear;
-
-            // Búsqueda simple (se puede optimizar binaria, pero para pocos años no hace falta)
             for (let i = 0; i < yearKeys.length - 1; i++) {
                 if (yearKeys[i] <= yearFloat && yearKeys[i+1] >= yearFloat) {
                     prevYear = yearKeys[i];
@@ -479,64 +561,46 @@
                     break;
                 }
             }
-
             const prevList = processedData[prevYear];
             const nextList = processedData[nextYear];
-            
-            // Factor de interpolación (0.0 a 1.0)
             const range = nextYear - prevYear;
             const progress = range === 0 ? 0 : (yearFloat - prevYear) / range;
-
-            // Mapear para acceso rápido
             const prevMap = new Map(prevList.map(i => [i.name, i.value]));
             const nextMap = new Map(nextList.map(i => [i.name, i.value]));
-
             const allNames = new Set([...prevMap.keys(), ...nextMap.keys()]);
             const result = [];
-
             allNames.forEach(name => {
                 const startVal = prevMap.get(name) || 0;
-                const endVal = nextMap.get(name) || startVal; // Si desaparece, mantener valor (fill forward implícito)
+                const endVal = nextMap.get(name) || startVal; 
                 const currentVal = startVal + (endVal - startVal) * progress;
-                
                 if (currentVal > 0) {
                     result.push({ name, value: currentVal });
                 }
             });
-
             return result;
         }
 
-        // --- INICIALIZACIÓN ---
         function initData() {
             if (Object.keys(rawData).length === 0) {
                 resetEmptyState();
                 return;
             }
-
             els.emptyStateMsg.classList.add('hidden');
             els.playPauseBtn.disabled = false;
             els.timelineSlider.disabled = false;
-
             processedData = preprocessData(rawData);
             yearKeys = Object.keys(processedData).map(Number).sort((a, b) => a - b);
-            
             if (yearKeys.length > 0) {
                 minYear = yearKeys[0];
                 maxYear = yearKeys[yearKeys.length - 1];
-                
                 els.timelineSlider.min = minYear;
                 els.timelineSlider.max = maxYear;
                 els.currentYearMini.innerText = minYear;
                 els.endYearMini.innerText = maxYear;
-                
-                // Si reiniciamos o cargamos, volver al inicio
                 currentYear = minYear;
                 renderFrame(currentYear);
                 els.timelineSlider.value = minYear;
             }
-            
-            // Exportar JSON para editor
             updateJsonEditor();
         }
 
@@ -553,29 +617,20 @@
             renderPlayerList();
         }
 
-        // --- RENDER LOOP (60 FPS) ---
         function gameLoop(timestamp) {
             if (!isPlaying) return;
             if (!lastTimestamp) lastTimestamp = timestamp;
-
-            const dt = timestamp - lastTimestamp; // ms
+            const dt = timestamp - lastTimestamp;
             lastTimestamp = timestamp;
-
             const secondsPerYear = parseFloat(els.durationInput.value) || 2;
             const yearsPerMs = 1 / (secondsPerYear * 1000);
-            
             currentYear += dt * yearsPerMs;
-
             if (currentYear >= maxYear) {
                 currentYear = maxYear;
                 pauseGame();
             }
-
             renderFrame(currentYear);
-            
-            // Actualizar slider visualmente (sin disparar evento)
             els.timelineSlider.value = currentYear;
-
             if (isPlaying) {
                 animationFrameId = requestAnimationFrame(gameLoop);
             }
@@ -584,13 +639,9 @@
         function renderFrame(yearVal) {
             const data = getDataAtYear(yearVal);
             if (data.length === 0) return;
-
             data.sort((a, b) => b.value - a.value);
             const maxValue = data[0].value || 1;
-
             els.yearDisplay.innerText = Math.floor(yearVal);
-
-            // Top 10
             const activeItems = data.slice(0, 10).map((item, index) => ({
                 ...item,
                 rank: index,
@@ -598,18 +649,12 @@
                 color: getPlayerColor(item.name),
                 imageUrl: getPlayerImageURL(item.name, 0)
             }));
-            
             const activeNames = new Set(activeItems.map(i => i.name));
-
             activeItems.forEach(item => {
                 let el = barElements[item.name];
-                
-                // CREACIÓN
                 if (!el) {
                     el = document.createElement('div');
                     el.className = "absolute left-6 right-6 flex items-center bar-item"; 
-                    // Nota: .bar-item tiene transition solo en top y opacity
-                    
                     el.innerHTML = `
                         <div class="absolute -top-5 left-0 text-xs font-bold text-white drop-shadow-md truncate max-w-[200px] shadow-black" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">${item.name}</div>
                         <div class="w-full h-10 relative flex items-center">
@@ -628,23 +673,15 @@
                     els.chartContainer.appendChild(el);
                     barElements[item.name] = el;
                 }
-
-                // ACTUALIZACIÓN
-                // Top: CSS transition maneja la suavidad del ranking
                 el.style.top = `${(item.rank * ROW_HEIGHT) + OFFSET_TOP}px`;
                 el.style.opacity = '1';
-
-                // Width: Actualización directa JS (sin transición CSS o muy corta)
                 const barFill = el.querySelector('.bar-fill');
                 barFill.style.width = `${Math.max(item.barWidth, 1)}%`;
                 barFill.style.backgroundColor = item.color;
                 barFill.style.backgroundImage = "linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 100%)";
-
-                // Imagen
                 const containerEl = el.querySelector('.party-logo-container');
                 const imgEl = containerEl.querySelector('img');
                 const fallbackEl = containerEl.querySelector('.logo-fallback');
-                
                 if (item.imageUrl) {
                     if (imgEl.dataset.src !== item.imageUrl) {
                         imgEl.src = item.imageUrl;
@@ -657,12 +694,9 @@
                     containerEl.classList.remove('hidden');
                 }
                 fallbackEl.style.color = item.color;
-
                 const valLabel = el.querySelector('.value-label');
                 valLabel.innerText = Math.round(item.value);
             });
-
-            // Ocultar barras que salen del top 10
             Object.keys(barElements).forEach(name => {
                 if (!activeNames.has(name)) {
                     const el = barElements[name];
@@ -672,17 +706,13 @@
             });
         }
 
-        // --- CONTROLES DE REPRODUCCIÓN ---
         function startGame() {
             if (isPlaying) return;
             isPlaying = true;
             lastTimestamp = 0;
-            
-            // Si estaba al final, reiniciar
             if (currentYear >= maxYear) {
                 currentYear = minYear;
             }
-            
             updatePlayButton();
             animationFrameId = requestAnimationFrame(gameLoop);
         }
@@ -707,27 +737,23 @@
             if (isPlaying) pauseGame();
             else startGame();
         });
-
         els.resetBtn.addEventListener('click', () => {
             pauseGame();
             currentYear = minYear;
             renderFrame(currentYear);
             els.timelineSlider.value = minYear;
         });
-
         els.timelineSlider.addEventListener('input', (e) => {
             pauseGame();
             currentYear = parseFloat(e.target.value);
             renderFrame(currentYear);
         });
 
-        // --- IMPORTACIÓN Y PARSEO ---
+        // --- IMPORTACIÓN Y EDICIÓN MANUAL ---
         els.btnTriggerUpload.onclick = () => els.fileUpload.click();
-        
         els.fileUpload.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = (evt) => {
                 try {
@@ -747,12 +773,9 @@
         function parseUserJson(userJson) {
             rawData = {};
             if (!Array.isArray(userJson)) throw new Error("JSON debe ser Array");
-
             userJson.forEach(entity => {
                 const name = entity.name;
                 if (!name) return;
-                
-                // Intenta varias claves comunes
                 const history = entity.data || entity.history || entity.values || [];
                 if (Array.isArray(history)) {
                     history.forEach(pt => {
@@ -766,11 +789,9 @@
         }
 
         function updateJsonEditor() {
-            // Reconstruir formato usuario para visualización
             const exportData = [];
             const allNames = new Set();
             Object.values(rawData).forEach(l => l.forEach(i => allNames.add(i.name)));
-            
             allNames.forEach(name => {
                 const hist = [];
                 Object.keys(rawData).sort().forEach(y => {
@@ -781,10 +802,6 @@
             });
             els.inputJson.value = JSON.stringify(exportData, null, 2);
         }
-
-        // --- GESTIÓN MANUAL (UI) ---
-        // (Similar a la versión anterior pero actualizando rawData directamente)
-        // ... (Renderizado de listas, editor, colores se mantiene igual) ...
 
         function renderColorPalette() {
             els.colorPaletteContainer.innerHTML = '';
@@ -816,7 +833,6 @@
         function renderPlayerList(filter = "") {
             els.playerList.innerHTML = "";
             const players = getAllPlayerNames();
-            
             if (players.length === 0) {
                 els.playerList.innerHTML = `
                     <div class="p-8 text-center text-slate-400 text-sm">
@@ -827,7 +843,6 @@
                 lucide.createIcons();
                 return;
             }
-
             players.forEach(name => {
                 if (filter && !name.toLowerCase().includes(filter.toLowerCase())) return;
                 const color = getPlayerColor(name);
@@ -842,23 +857,27 @@
         }
 
         function loadPlayerIntoEditor(name) {
+            // Force switch to player mode
+            switchEditorMode('player');
+            
             editingPlayerName = name;
             els.editorModeTitle.innerText = "Editar Barra";
             els.playerStatusBadge.classList.add("hidden");
             els.editName.value = name;
             els.editName.readOnly = true; 
             els.editName.classList.add("bg-slate-50", "text-slate-500");
-            
             selectColor(getPlayerColor(name));
             const imgSrc = PLAYER_IMAGES_SOURCES[name] ? PLAYER_IMAGES_SOURCES[name][0] : "";
             els.editImage.value = imgSrc;
             updateImagePreview(imgSrc);
-            
             renderDataRows(name);
             renderPlayerList(els.searchPlayer.value);
         }
 
         function clearEditor() {
+            // Force switch to player mode
+            switchEditorMode('player');
+
             editingPlayerName = null;
             els.editorModeTitle.innerText = "Nueva Barra";
             els.playerStatusBadge.classList.remove("hidden");
@@ -887,12 +906,10 @@
                 const entry = rawData[y].find(p => p.name === name);
                 if(entry) rows.push({year: y, value: entry.value});
             });
-
             if (rows.length === 0) {
                  els.dataRowsContainer.innerHTML = '<div class="p-2 text-center text-xs text-slate-400">Sin datos registrados</div>';
                  return;
             }
-
             rows.forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'grid grid-cols-4 gap-2 items-center p-1 border-b border-slate-100 bg-white hover:bg-slate-50 transition-colors rounded';
@@ -913,7 +930,6 @@
             lucide.createIcons();
         }
         
-        // Globals for inline HTML handlers
         window.updateDataValue = (year, val) => {
             if(!editingPlayerName) return;
             const num = parseFloat(val);
@@ -929,7 +945,7 @@
              renderDataRows(editingPlayerName);
         };
 
-        // UI Event Listeners
+        // Events
         els.btnNewPlayer.onclick = () => { clearEditor(); els.editName.focus(); };
         els.searchPlayer.oninput = (e) => renderPlayerList(e.target.value);
         els.editImage.onchange = (e) => updateImagePreview(e.target.value);
@@ -940,7 +956,6 @@
             const year = els.newYearInput.value;
             if(!year) return;
             if(!rawData[year]) rawData[year] = [];
-            
             if(rawData[year].find(p => p.name === editingPlayerName)) {
                 alert("Año ya existe");
             } else {
@@ -953,22 +968,16 @@
         els.btnSavePlayer.onclick = () => {
             const name = els.editName.value;
             if(!name) return alert("Falta nombre");
-            
             PLAYER_COLORS[name] = els.editColorText.value;
             if(els.editImage.value) PLAYER_IMAGES_SOURCES[name] = [els.editImage.value];
-            
             if(!getAllPlayerNames().includes(name)) {
-                // Init new
                 const firstY = Object.keys(rawData).sort()[0] || new Date().getFullYear().toString();
                 if(!rawData[firstY]) rawData[firstY] = [];
                 rawData[firstY].push({name, value: 0});
             }
-            
             initData();
             editingPlayerName = name; 
             renderPlayerList(els.searchPlayer.value);
-            
-            // Visual feedback button
             const oldTxt = els.btnSavePlayer.innerHTML;
             els.btnSavePlayer.innerHTML = "Guardado";
             setTimeout(() => els.btnSavePlayer.innerHTML = oldTxt, 1000);
