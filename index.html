@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bar Chart Race - Custom Data</title>
+    <title>Bar Chart Race - Fluid Engine</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
-        /* --- Transiciones Suaves --- */
-        .bar-transition {
-            transition-property: top, width, opacity, background-color;
-            transition-timing-function: linear;
+        /* --- Transiciones Inteligentes --- */
+        /* Solo animamos 'top' con CSS para que los intercambios de posición sean suaves.
+           El 'width' se controla por JS a 60fps para máxima precisión sin lag. */
+        .bar-item {
+            transition: top 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
         }
         
         /* --- Scrollbar Personalizada --- */
@@ -298,13 +299,14 @@
             </div>
         </div>
 
-        <!-- Timeline Slider -->
+        <!-- Timeline Slider (Dynamic) -->
         <div class="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-lg p-4 border-t border-white/10 z-30 pb-6">
             <div class="flex items-center justify-between mb-2">
                  <span id="current-year-mini" class="text-xs font-bold text-white">---</span>
                  <span id="end-year-mini" class="text-xs font-bold text-white/70">---</span>
             </div>
-            <input type="range" id="timeline-slider" min="0" value="0" class="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-blue-400 block" disabled>
+            <!-- Slider now maps to float year for precision -->
+            <input type="range" id="timeline-slider" min="0" max="100" step="0.01" value="0" class="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-blue-400 block" disabled>
         </div>
     </div>
 
@@ -319,15 +321,12 @@
             <i id="pause-icon" data-lucide="pause" class="w-8 h-8 fill-current hidden"></i>
         </button>
 
+        <!-- New Duration Control -->
         <div class="flex flex-col items-end">
-            <span class="text-[10px] uppercase font-bold text-slate-400 mb-1">Velocidad</span>
+            <span class="text-[10px] uppercase font-bold text-slate-400 mb-1">Segundos por Año</span>
             <div class="flex items-center gap-2 bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700">
-                <i data-lucide="fast-forward" class="w-3.5 h-3.5 text-slate-300"></i>
-                <select id="speed-select" class="bg-transparent text-xs font-semibold text-slate-200 outline-none cursor-pointer w-20 border-none focus:ring-0">
-                    <option value="40" class="bg-slate-900">Lento</option>
-                    <option value="20" class="bg-slate-900" selected>Fluido</option>
-                    <option value="10" class="bg-slate-900">Rápido</option>
-                </select>
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-300"></i>
+                <input id="duration-input" type="number" min="0.1" max="10" step="0.1" value="1.5" class="bg-transparent text-xs font-bold text-blue-200 outline-none w-10 text-center border-none focus:ring-0">
             </div>
         </div>
     </div>
@@ -336,13 +335,13 @@
         // --- ESTADO INICIAL VACÍO ---
         let PLAYER_COLORS = {};        // Mapa Nombre -> Hex
         let PLAYER_IMAGES_SOURCES = {}; // Mapa Nombre -> [URL]
-        let rawData = {};              // Estructura Interna: { "2000": [{name, value}], ... }
+        let rawData = {};              // { "2000": [{name, value}], ... }
         
         // Proxy para imágenes
         const PROXY = "https://wsrv.nl/?url=";
         const PARAMS = "&w=200&h=200&fit=cover&a=top";
 
-        // --- PALETA DE COLORES (10 Colores x 5 Tonos) ---
+        // --- PALETA DE COLORES ---
         const COLOR_PALETTE = {
             Gris:    ['#f1f5f9', '#cbd5e1', '#94a3b8', '#64748b', '#334155'], 
             Rojo:    ['#fee2e2', '#fca5a5', '#ef4444', '#b91c1c', '#7f1d1d'], 
@@ -356,14 +355,17 @@
             Rosa:    ['#fce7f3', '#f9a8d4', '#ec4899', '#be185d', '#831843'] 
         };
 
-        // Estado Global
-        let denseData = {};
-        let timeline = [];
-        let currentIndex = 0;
+        // Estado Global de Animación
+        let processedData = {}; // Data filled forward
+        let yearKeys = [];
+        let minYear = 0;
+        let maxYear = 0;
+        
+        let currentYear = 0; // Float
         let isPlaying = false;
-        let frameDuration = 20; 
-        let animationStep = 0.01; 
-        let intervalId = null;
+        let lastTimestamp = 0;
+        let animationFrameId = null;
+        
         let editingPlayerName = null; 
 
         // Referencias DOM
@@ -378,7 +380,7 @@
             playIcon: document.getElementById('play-icon'),
             pauseIcon: document.getElementById('pause-icon'),
             resetBtn: document.getElementById('reset-btn'),
-            speedSelect: document.getElementById('speed-select'),
+            durationInput: document.getElementById('duration-input'),
             toggleEditorBtn: document.getElementById('toggle-editor-btn'),
             closeEditorBtn: document.getElementById('close-editor-btn'),
             editorModal: document.getElementById('editor-modal'),
@@ -417,149 +419,98 @@
         const OFFSET_TOP = 150;
 
         // --- UTILS ---
-        const getPlayerColor = (name) => {
-            if (PLAYER_COLORS[name]) return PLAYER_COLORS[name];
-            return '#94a3b8'; // Gris por defecto si no se ha configurado
-        };
-
+        const getPlayerColor = (name) => PLAYER_COLORS[name] || '#94a3b8';
         const getPlayerImageURL = (name, index = 0) => {
             const sources = PLAYER_IMAGES_SOURCES[name];
             if (!sources || !sources[index]) return null;
             return PROXY + encodeURIComponent(sources[index]) + PARAMS;
         };
 
-        // --- LÓGICA DE DATOS ---
-
-        // Transforma el JSON del usuario (Entity -> Data) a interno (Year -> List)
-        function parseUserJson(userJson) {
-            const newRawData = {};
-            const allNames = new Set();
-
-            if (!Array.isArray(userJson)) throw new Error("El JSON debe ser un Array de objetos.");
-
-            userJson.forEach(entity => {
-                if (!entity.name) return;
-                const name = entity.name;
-                allNames.add(name);
-
-                // Soporte para array en "data", "history" o "values"
-                const history = entity.data || entity.history || entity.values || [];
-                
-                if (Array.isArray(history)) {
-                    history.forEach(point => {
-                        const year = String(point.year);
-                        const val = parseFloat(point.value);
-                        if (!newRawData[year]) newRawData[year] = [];
-                        newRawData[year].push({ name, value: val });
-                    });
-                }
-            });
-
-            return newRawData;
-        }
-
+        // --- PRE-PROCESAMIENTO ---
+        // 1. Fill Forward (no decrecer)
+        // 2. Estructura optimizada para acceso rápido
         const preprocessData = (inputData) => {
             const years = Object.keys(inputData).map(Number).sort((a, b) => a - b);
             if (years.length === 0) return {};
 
             const allPlayers = new Set();
-            Object.values(inputData).forEach(yearList => {
-                yearList.forEach(item => allPlayers.add(item.name));
-            });
+            Object.values(inputData).forEach(yearList => yearList.forEach(item => allPlayers.add(item.name)));
 
             const filledData = {};
             const lastValues = {}; 
             allPlayers.forEach(p => lastValues[p] = 0);
 
             years.forEach(year => {
-                const currentYearData = inputData[year] || [];
-                const currentYearMap = {};
-                currentYearData.forEach(item => currentYearMap[item.name] = item.value);
+                const currentMap = {};
+                (inputData[year] || []).forEach(item => currentMap[item.name] = item.value);
 
                 const newYearList = [];
                 allPlayers.forEach(player => {
-                    let value = 0;
-                    if (currentYearMap[player] !== undefined) {
-                        value = currentYearMap[player];
-                    } else {
-                        value = lastValues[player]; // Fill forward
-                    }
-                    // No decrecer
-                    value = Math.max(value, lastValues[player]);
-                    lastValues[player] = value;
-
-                    if (value > 0) {
-                        newYearList.push({ name: player, value: value });
-                    }
+                    let val = currentMap[player] !== undefined ? currentMap[player] : lastValues[player];
+                    val = Math.max(val, lastValues[player]); // No decrecer
+                    lastValues[player] = val;
+                    if (val > 0) newYearList.push({ name: player, value: val });
                 });
                 filledData[year] = newYearList;
             });
             return filledData;
         };
 
-        const interpolateData = (data, step) => {
-            const processedData = preprocessData(data);
-            const years = Object.keys(processedData).map(Number).sort((a, b) => a - b);
+        // --- MOTOR DE INTERPOLACIÓN ON-THE-FLY ---
+        function getDataAtYear(yearFloat) {
+            // Encontrar year previo y siguiente
+            // yearKeys está ordenado
+            if (yearKeys.length === 0) return [];
             
-            if (years.length === 0) return {};
+            // Si estamos antes del inicio
+            if (yearFloat <= minYear) return processedData[minYear];
+            // Si estamos después del final
+            if (yearFloat >= maxYear) return processedData[maxYear];
 
-            const minYear = years[0];
-            const maxYear = years[years.length - 1];
-            const interpolated = {};
+            // Buscar índices
+            let prevYear = minYear;
+            let nextYear = maxYear;
 
-            const getRawValueAtYear = (y, name) => {
-                if (processedData[y]) {
-                    const found = processedData[y].find(i => i.name === name);
-                    return found ? found.value : 0;
+            // Búsqueda simple (se puede optimizar binaria, pero para pocos años no hace falta)
+            for (let i = 0; i < yearKeys.length - 1; i++) {
+                if (yearKeys[i] <= yearFloat && yearKeys[i+1] >= yearFloat) {
+                    prevYear = yearKeys[i];
+                    nextYear = yearKeys[i+1];
+                    break;
                 }
-                return 0;
             }
+
+            const prevList = processedData[prevYear];
+            const nextList = processedData[nextYear];
             
-            const allPlayers = new Set();
-            Object.values(processedData).forEach(yearList => {
-                yearList.forEach(item => allPlayers.add(JSON.stringify({ name: item.name })));
-            });
-            const playersList = Array.from(allPlayers).map(c => JSON.parse(c));
+            // Factor de interpolación (0.0 a 1.0)
+            const range = nextYear - prevYear;
+            const progress = range === 0 ? 0 : (yearFloat - prevYear) / range;
 
-            for (let y = minYear; y <= maxYear; y += step) {
-                const currentYearKey = y.toFixed(2); 
-                const prevKeyYear = years.filter(year => year <= y).pop();
-                const nextKeyYear = years.find(year => year > y) || prevKeyYear;
+            // Mapear para acceso rápido
+            const prevMap = new Map(prevList.map(i => [i.name, i.value]));
+            const nextMap = new Map(nextList.map(i => [i.name, i.value]));
 
-                const frameItems = playersList.map(player => {
-                    const startVal = getRawValueAtYear(prevKeyYear, player.name);
-                    const endVal = getRawValueAtYear(nextKeyYear, player.name);
-                    
-                    let currentVal;
-                    if (prevKeyYear === nextKeyYear) {
-                        currentVal = startVal;
-                    } else {
-                        const progress = (y - prevKeyYear) / (nextKeyYear - prevKeyYear);
-                        currentVal = startVal + (endVal - startVal) * progress;
-                    }
-                    
-                    if (currentVal <= 0) return null;
-                    return { name: player.name, value: currentVal };
-                }).filter(Boolean);
+            const allNames = new Set([...prevMap.keys(), ...nextMap.keys()]);
+            const result = [];
+
+            allNames.forEach(name => {
+                const startVal = prevMap.get(name) || 0;
+                const endVal = nextMap.get(name) || startVal; // Si desaparece, mantener valor (fill forward implícito)
+                const currentVal = startVal + (endVal - startVal) * progress;
                 
-                interpolated[currentYearKey] = frameItems;
-            }
-            return interpolated;
-        };
+                if (currentVal > 0) {
+                    result.push({ name, value: currentVal });
+                }
+            });
 
+            return result;
+        }
+
+        // --- INICIALIZACIÓN ---
         function initData() {
-            // Comprobación de vacío
             if (Object.keys(rawData).length === 0) {
-                denseData = {};
-                timeline = [];
-                els.emptyStateMsg.classList.remove('hidden');
-                els.playPauseBtn.disabled = true;
-                els.timelineSlider.disabled = true;
-                els.yearDisplay.innerText = "---";
-                els.currentYearMini.innerText = "---";
-                els.endYearMini.innerText = "---";
-                els.inputJson.value = "[]";
-                renderPlayerList();
+                resetEmptyState();
                 return;
             }
 
@@ -567,32 +518,210 @@
             els.playPauseBtn.disabled = false;
             els.timelineSlider.disabled = false;
 
-            denseData = interpolateData(rawData, animationStep);
-            timeline = Object.keys(denseData).sort((a, b) => parseFloat(a) - parseFloat(b));
+            processedData = preprocessData(rawData);
+            yearKeys = Object.keys(processedData).map(Number).sort((a, b) => a - b);
             
-            if (timeline.length > 0) {
-                els.timelineSlider.max = timeline.length - 1;
-                els.endYearMini.innerText = Math.floor(parseFloat(timeline[timeline.length - 1])); 
-                els.currentYearMini.innerText = Math.floor(parseFloat(timeline[0]));
+            if (yearKeys.length > 0) {
+                minYear = yearKeys[0];
+                maxYear = yearKeys[yearKeys.length - 1];
+                
+                els.timelineSlider.min = minYear;
+                els.timelineSlider.max = maxYear;
+                els.currentYearMini.innerText = minYear;
+                els.endYearMini.innerText = maxYear;
+                
+                // Si reiniciamos o cargamos, volver al inicio
+                currentYear = minYear;
+                renderFrame(currentYear);
+                els.timelineSlider.value = minYear;
             }
             
-            // Exportar JSON interno como formato simple para el usuario (reversa)
-            const exportData = [];
-            const allNames = getAllPlayerNames();
-            allNames.forEach(name => {
-                const history = [];
-                Object.keys(rawData).sort().forEach(y => {
-                    const entry = rawData[y].find(p => p.name === name);
-                    if (entry) history.push({ year: parseInt(y), value: entry.value });
-                });
-                if (history.length > 0) {
-                    exportData.push({ name: name, data: history });
-                }
-            });
-            els.inputJson.value = JSON.stringify(exportData, null, 2);
+            // Exportar JSON para editor
+            updateJsonEditor();
         }
 
-        // --- FILE UPLOAD ---
+        function resetEmptyState() {
+            processedData = {};
+            yearKeys = [];
+            els.emptyStateMsg.classList.remove('hidden');
+            els.playPauseBtn.disabled = true;
+            els.timelineSlider.disabled = true;
+            els.yearDisplay.innerText = "---";
+            els.currentYearMini.innerText = "---";
+            els.endYearMini.innerText = "---";
+            els.inputJson.value = "[]";
+            renderPlayerList();
+        }
+
+        // --- RENDER LOOP (60 FPS) ---
+        function gameLoop(timestamp) {
+            if (!isPlaying) return;
+            if (!lastTimestamp) lastTimestamp = timestamp;
+
+            const dt = timestamp - lastTimestamp; // ms
+            lastTimestamp = timestamp;
+
+            const secondsPerYear = parseFloat(els.durationInput.value) || 2;
+            const yearsPerMs = 1 / (secondsPerYear * 1000);
+            
+            currentYear += dt * yearsPerMs;
+
+            if (currentYear >= maxYear) {
+                currentYear = maxYear;
+                pauseGame();
+            }
+
+            renderFrame(currentYear);
+            
+            // Actualizar slider visualmente (sin disparar evento)
+            els.timelineSlider.value = currentYear;
+
+            if (isPlaying) {
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function renderFrame(yearVal) {
+            const data = getDataAtYear(yearVal);
+            if (data.length === 0) return;
+
+            data.sort((a, b) => b.value - a.value);
+            const maxValue = data[0].value || 1;
+
+            els.yearDisplay.innerText = Math.floor(yearVal);
+
+            // Top 10
+            const activeItems = data.slice(0, 10).map((item, index) => ({
+                ...item,
+                rank: index,
+                barWidth: (item.value / maxValue) * 100,
+                color: getPlayerColor(item.name),
+                imageUrl: getPlayerImageURL(item.name, 0)
+            }));
+            
+            const activeNames = new Set(activeItems.map(i => i.name));
+
+            activeItems.forEach(item => {
+                let el = barElements[item.name];
+                
+                // CREACIÓN
+                if (!el) {
+                    el = document.createElement('div');
+                    el.className = "absolute left-6 right-6 flex items-center bar-item"; 
+                    // Nota: .bar-item tiene transition solo en top y opacity
+                    
+                    el.innerHTML = `
+                        <div class="absolute -top-5 left-0 text-xs font-bold text-white drop-shadow-md truncate max-w-[200px] shadow-black" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">${item.name}</div>
+                        <div class="w-full h-10 relative flex items-center">
+                            <div class="bar-fill h-full rounded-r-full shadow-lg flex items-center pl-2 overflow-visible whitespace-nowrap relative border border-white/40">
+                                <div class="party-logo-container w-10 h-10 rounded-full absolute -right-5 border-2 border-white shadow-md z-10 bg-white overflow-hidden hidden ring-2 ring-black/20">
+                                    <img src="" referrerpolicy="no-referrer" class="player-face w-full h-full" 
+                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                        onload="this.style.display='block'; this.nextElementSibling.style.display='none';"
+                                    >
+                                    <div class="logo-fallback hidden" style="color:${getPlayerColor(item.name)}">${item.name.substring(0,2)}</div>
+                                </div>
+                            </div>
+                            <span class="value-label ml-2 text-sm font-bold text-white tabular-nums z-20 shadow-lg bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20">0</span>
+                        </div>
+                    `;
+                    els.chartContainer.appendChild(el);
+                    barElements[item.name] = el;
+                }
+
+                // ACTUALIZACIÓN
+                // Top: CSS transition maneja la suavidad del ranking
+                el.style.top = `${(item.rank * ROW_HEIGHT) + OFFSET_TOP}px`;
+                el.style.opacity = '1';
+
+                // Width: Actualización directa JS (sin transición CSS o muy corta)
+                const barFill = el.querySelector('.bar-fill');
+                barFill.style.width = `${Math.max(item.barWidth, 1)}%`;
+                barFill.style.backgroundColor = item.color;
+                barFill.style.backgroundImage = "linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 100%)";
+
+                // Imagen
+                const containerEl = el.querySelector('.party-logo-container');
+                const imgEl = containerEl.querySelector('img');
+                const fallbackEl = containerEl.querySelector('.logo-fallback');
+                
+                if (item.imageUrl) {
+                    if (imgEl.dataset.src !== item.imageUrl) {
+                        imgEl.src = item.imageUrl;
+                        imgEl.dataset.src = item.imageUrl;
+                    }
+                    containerEl.classList.remove('hidden');
+                } else {
+                    imgEl.style.display = 'none';
+                    fallbackEl.style.display = 'flex';
+                    containerEl.classList.remove('hidden');
+                }
+                fallbackEl.style.color = item.color;
+
+                const valLabel = el.querySelector('.value-label');
+                valLabel.innerText = Math.round(item.value);
+            });
+
+            // Ocultar barras que salen del top 10
+            Object.keys(barElements).forEach(name => {
+                if (!activeNames.has(name)) {
+                    const el = barElements[name];
+                    el.style.opacity = '0';
+                    el.style.top = '600px'; 
+                }
+            });
+        }
+
+        // --- CONTROLES DE REPRODUCCIÓN ---
+        function startGame() {
+            if (isPlaying) return;
+            isPlaying = true;
+            lastTimestamp = 0;
+            
+            // Si estaba al final, reiniciar
+            if (currentYear >= maxYear) {
+                currentYear = minYear;
+            }
+            
+            updatePlayButton();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function pauseGame() {
+            isPlaying = false;
+            cancelAnimationFrame(animationFrameId);
+            updatePlayButton();
+        }
+
+        function updatePlayButton() {
+            if (isPlaying) {
+                els.playIcon.classList.add('hidden');
+                els.pauseIcon.classList.remove('hidden');
+            } else {
+                els.playIcon.classList.remove('hidden');
+                els.pauseIcon.classList.add('hidden');
+            }
+        }
+
+        els.playPauseBtn.addEventListener('click', () => {
+            if (isPlaying) pauseGame();
+            else startGame();
+        });
+
+        els.resetBtn.addEventListener('click', () => {
+            pauseGame();
+            currentYear = minYear;
+            renderFrame(currentYear);
+            els.timelineSlider.value = minYear;
+        });
+
+        els.timelineSlider.addEventListener('input', (e) => {
+            pauseGame();
+            currentYear = parseFloat(e.target.value);
+            renderFrame(currentYear);
+        });
+
+        // --- IMPORTACIÓN Y PARSEO ---
         els.btnTriggerUpload.onclick = () => els.fileUpload.click();
         
         els.fileUpload.onchange = (e) => {
@@ -603,26 +732,59 @@
             reader.onload = (evt) => {
                 try {
                     const json = JSON.parse(evt.target.result);
-                    rawData = parseUserJson(json);
-                    
-                    // Resetear configuraciones visuales si se quiere empezar limpio
-                    // O mantenerlas por si coinciden nombres? Mantenemos por ahora.
-                    
+                    parseUserJson(json);
                     initData();
-                    currentIndex = 0;
-                    renderFrame();
                     renderPlayerList();
                     alert("Datos importados correctamente.");
                 } catch (err) {
-                    alert("Error al leer el JSON: " + err.message);
+                    alert("Error al leer JSON: " + err.message);
                 }
             };
             reader.readAsText(file);
-            // Limpiar input
             e.target.value = '';
         };
 
-        // --- GESTIÓN DE UI ---
+        function parseUserJson(userJson) {
+            rawData = {};
+            if (!Array.isArray(userJson)) throw new Error("JSON debe ser Array");
+
+            userJson.forEach(entity => {
+                const name = entity.name;
+                if (!name) return;
+                
+                // Intenta varias claves comunes
+                const history = entity.data || entity.history || entity.values || [];
+                if (Array.isArray(history)) {
+                    history.forEach(pt => {
+                        const year = String(pt.year);
+                        const val = parseFloat(pt.value);
+                        if (!rawData[year]) rawData[year] = [];
+                        rawData[year].push({ name, value: val });
+                    });
+                }
+            });
+        }
+
+        function updateJsonEditor() {
+            // Reconstruir formato usuario para visualización
+            const exportData = [];
+            const allNames = new Set();
+            Object.values(rawData).forEach(l => l.forEach(i => allNames.add(i.name)));
+            
+            allNames.forEach(name => {
+                const hist = [];
+                Object.keys(rawData).sort().forEach(y => {
+                    const entry = rawData[y].find(p => p.name === name);
+                    if(entry) hist.push({ year: parseInt(y), value: entry.value });
+                });
+                if(hist.length) exportData.push({ name, data: hist });
+            });
+            els.inputJson.value = JSON.stringify(exportData, null, 2);
+        }
+
+        // --- GESTIÓN MANUAL (UI) ---
+        // (Similar a la versión anterior pero actualizando rawData directamente)
+        // ... (Renderizado de listas, editor, colores se mantiene igual) ...
 
         function renderColorPalette() {
             els.colorPaletteContainer.innerHTML = '';
@@ -640,33 +802,98 @@
 
         function selectColor(color) {
             els.editColorText.value = color;
-            const swatches = document.querySelectorAll('.color-swatch');
-            swatches.forEach(s => {
-                if (s.dataset.color === color) s.classList.add('selected');
-                else s.classList.remove('selected');
+            document.querySelectorAll('.color-swatch').forEach(s => {
+                s.classList.toggle('selected', s.dataset.color === color);
             });
         }
 
-        function renderDataRows(playerName) {
+        function getAllPlayerNames() {
+            const names = new Set();
+            Object.values(rawData).forEach(list => list.forEach(i => names.add(i.name)));
+            return Array.from(names).sort();
+        }
+
+        function renderPlayerList(filter = "") {
+            els.playerList.innerHTML = "";
+            const players = getAllPlayerNames();
+            
+            if (players.length === 0) {
+                els.playerList.innerHTML = `
+                    <div class="p-8 text-center text-slate-400 text-sm">
+                        <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                        <p>Sin datos.</p>
+                        <p class="text-xs mt-1">Importa un JSON o añade manualmente.</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            players.forEach(name => {
+                if (filter && !name.toLowerCase().includes(filter.toLowerCase())) return;
+                const color = getPlayerColor(name);
+                const btn = document.createElement("button");
+                btn.className = "player-chip w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-3 border border-transparent";
+                if (editingPlayerName === name) btn.classList.add("active");
+                
+                btn.innerHTML = `<div class="w-3 h-3 rounded-full shadow-sm" style="background-color: ${color}"></div><span class="truncate">${name}</span>`;
+                btn.onclick = () => loadPlayerIntoEditor(name);
+                els.playerList.appendChild(btn);
+            });
+        }
+
+        function loadPlayerIntoEditor(name) {
+            editingPlayerName = name;
+            els.editorModeTitle.innerText = "Editar Barra";
+            els.playerStatusBadge.classList.add("hidden");
+            els.editName.value = name;
+            els.editName.readOnly = true; 
+            els.editName.classList.add("bg-slate-50", "text-slate-500");
+            
+            selectColor(getPlayerColor(name));
+            const imgSrc = PLAYER_IMAGES_SOURCES[name] ? PLAYER_IMAGES_SOURCES[name][0] : "";
+            els.editImage.value = imgSrc;
+            updateImagePreview(imgSrc);
+            
+            renderDataRows(name);
+            renderPlayerList(els.searchPlayer.value);
+        }
+
+        function clearEditor() {
+            editingPlayerName = null;
+            els.editorModeTitle.innerText = "Nueva Barra";
+            els.playerStatusBadge.classList.remove("hidden");
+            els.editName.value = "";
+            els.editName.readOnly = false;
+            els.editName.classList.remove("bg-slate-50", "text-slate-500");
+            selectColor('#94a3b8');
+            els.editImage.value = "";
+            updateImagePreview("");
+            els.dataRowsContainer.innerHTML = '<div class="p-4 text-center text-xs text-slate-400 italic">Crea la barra para añadir datos</div>';
+            renderPlayerList(els.searchPlayer.value);
+        }
+
+        function updateImagePreview(url) {
+             const show = !!url;
+             els.previewImage.src = show ? (PROXY + encodeURIComponent(url) + PARAMS) : "";
+             els.previewImage.classList.toggle("hidden", !show);
+             els.previewPlaceholder.classList.toggle("hidden", show);
+        }
+
+        function renderDataRows(name) {
             els.dataRowsContainer.innerHTML = '';
-            if (!playerName) return;
-
             const years = Object.keys(rawData).sort();
-            const playerYears = [];
-
-            years.forEach(year => {
-                const entry = rawData[year].find(p => p.name === playerName);
-                if (entry) {
-                    playerYears.push({ year, value: entry.value });
-                }
+            const rows = [];
+            years.forEach(y => {
+                const entry = rawData[y].find(p => p.name === name);
+                if(entry) rows.push({year: y, value: entry.value});
             });
 
-            if (playerYears.length === 0) {
+            if (rows.length === 0) {
                  els.dataRowsContainer.innerHTML = '<div class="p-2 text-center text-xs text-slate-400">Sin datos registrados</div>';
                  return;
             }
 
-            playerYears.forEach(item => {
+            rows.forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'grid grid-cols-4 gap-2 items-center p-1 border-b border-slate-100 bg-white hover:bg-slate-50 transition-colors rounded';
                 row.innerHTML = `
@@ -685,370 +912,79 @@
             });
             lucide.createIcons();
         }
-
-        window.updateDataValue = (year, value) => {
-            if (!editingPlayerName) return;
-            const val = parseFloat(value);
-            if (isNaN(val)) return;
-            const list = rawData[year];
-            const entry = list.find(p => p.name === editingPlayerName);
-            if (entry) entry.value = val;
+        
+        // Globals for inline HTML handlers
+        window.updateDataValue = (year, val) => {
+            if(!editingPlayerName) return;
+            const num = parseFloat(val);
+            if(isNaN(num)) return;
+            const entry = rawData[year].find(p => p.name === editingPlayerName);
+            if(entry) entry.value = num;
         };
-
+        
         window.deleteDataYear = (year) => {
-             if (!editingPlayerName) return;
-             if(!confirm(`¿Borrar datos del año ${year}?`)) return;
+             if (!editingPlayerName || !confirm(`¿Borrar año ${year}?`)) return;
              rawData[year] = rawData[year].filter(p => p.name !== editingPlayerName);
              if (rawData[year].length === 0) delete rawData[year];
              renderDataRows(editingPlayerName);
         };
 
-        function getAllPlayerNames() {
-            const names = new Set();
-            Object.values(rawData).forEach(list => list.forEach(i => names.add(i.name)));
-            return Array.from(names).sort();
-        }
-
-        function renderPlayerList(filter = "") {
-            els.playerList.innerHTML = "";
-            const players = getAllPlayerNames();
-            
-            if (players.length === 0) {
-                els.playerList.innerHTML = `
-                    <div class="p-8 text-center text-slate-400 text-sm">
-                        <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-                        <p>Sin datos.</p>
-                        <p class="text-xs mt-1">Importa un JSON o añade manualmente.</p>
-                    </div>
-                `;
-                lucide.createIcons();
-                return;
-            }
-
-            players.forEach(name => {
-                if (filter && !name.toLowerCase().includes(filter.toLowerCase())) return;
-
-                const color = getPlayerColor(name);
-                const btn = document.createElement("button");
-                btn.className = "player-chip w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-3 border border-transparent";
-                if (editingPlayerName === name) btn.classList.add("active");
-                
-                btn.innerHTML = `
-                    <div class="w-3 h-3 rounded-full shadow-sm" style="background-color: ${color}"></div>
-                    <span class="truncate">${name}</span>
-                `;
-                
-                btn.onclick = () => loadPlayerIntoEditor(name);
-                els.playerList.appendChild(btn);
-            });
-        }
-
-        function loadPlayerIntoEditor(name) {
-            editingPlayerName = name;
-            els.editorModeTitle.innerText = "Editar Barra";
-            els.playerStatusBadge.classList.add("hidden");
-            
-            // Populate Form
-            els.editName.value = name;
-            els.editName.readOnly = true; 
-            els.editName.classList.add("bg-slate-50", "text-slate-500");
-            
-            const color = getPlayerColor(name);
-            selectColor(color);
-
-            const imgSrc = PLAYER_IMAGES_SOURCES[name] ? PLAYER_IMAGES_SOURCES[name][0] : "";
-            els.editImage.value = imgSrc;
-            updateImagePreview(imgSrc);
-
-            renderDataRows(name);
-            renderPlayerList(els.searchPlayer.value);
-        }
-
-        function clearEditor() {
-            editingPlayerName = null;
-            els.editorModeTitle.innerText = "Nueva Barra";
-            els.playerStatusBadge.classList.remove("hidden");
-            
-            els.editName.value = "";
-            els.editName.readOnly = false;
-            els.editName.classList.remove("bg-slate-50", "text-slate-500");
-            
-            selectColor('#94a3b8'); // Gris por defecto
-            
-            els.editImage.value = "";
-            updateImagePreview("");
-            
-            els.dataRowsContainer.innerHTML = '<div class="p-4 text-center text-xs text-slate-400 italic">Crea la barra para añadir datos</div>';
-            
-            renderPlayerList(els.searchPlayer.value);
-        }
-
-        function updateImagePreview(url) {
-            if (url) {
-                els.previewImage.src = PROXY + encodeURIComponent(url) + PARAMS;
-                els.previewImage.classList.remove("hidden");
-                els.previewPlaceholder.classList.add("hidden");
-            } else {
-                els.previewImage.classList.add("hidden");
-                els.previewPlaceholder.classList.remove("hidden");
-            }
-        }
-
-        // --- EVENTOS EDITOR ---
-
-        els.btnNewPlayer.onclick = () => {
-            clearEditor();
-            els.editName.focus();
-        };
-
-        els.searchPlayer.oninput = (e) => {
-            renderPlayerList(e.target.value);
-        };
-
-        els.editImage.onchange = (e) => {
-            updateImagePreview(e.target.value);
-        };
-
+        // UI Event Listeners
+        els.btnNewPlayer.onclick = () => { clearEditor(); els.editName.focus(); };
+        els.searchPlayer.oninput = (e) => renderPlayerList(e.target.value);
+        els.editImage.onchange = (e) => updateImagePreview(e.target.value);
+        els.btnDownloadJson.onclick = () => els.jsonSection.classList.toggle("hidden");
+        
         els.btnAddYear.onclick = () => {
-            if (!editingPlayerName) return alert("Primero crea o selecciona una barra.");
-            
+            if (!editingPlayerName) return alert("Selecciona una barra");
             const year = els.newYearInput.value;
-            if (!year) return;
-
-            if (!rawData[year]) rawData[year] = [];
+            if(!year) return;
+            if(!rawData[year]) rawData[year] = [];
             
-            const exists = rawData[year].find(p => p.name === editingPlayerName);
-            if (!exists) {
-                rawData[year].push({ name: editingPlayerName, value: 0 });
-                renderDataRows(editingPlayerName);
-                setTimeout(() => {
-                    els.dataRowsContainer.scrollTop = els.dataRowsContainer.scrollHeight;
-                }, 50);
+            if(rawData[year].find(p => p.name === editingPlayerName)) {
+                alert("Año ya existe");
             } else {
-                alert(`El año ${year} ya existe.`);
+                rawData[year].push({name: editingPlayerName, value: 0});
+                renderDataRows(editingPlayerName);
             }
             els.newYearInput.value = '';
         };
 
         els.btnSavePlayer.onclick = () => {
             const name = els.editName.value;
-            const color = els.editColorText.value;
-            const img = els.editImage.value;
-
-            if (!name) return alert("El nombre es obligatorio.");
-
-            // 1. Guardar Color y Foto
-            PLAYER_COLORS[name] = color;
-            if (img) PLAYER_IMAGES_SOURCES[name] = [img];
-
-            // 2. Si es nueva, inicializar
-            const allNames = getAllPlayerNames();
-            if (!allNames.includes(name)) {
-                const firstYear = Object.keys(rawData).sort()[0];
-                if (firstYear) {
-                    rawData[firstYear].push({ name: name, value: 0 }); 
-                } else {
-                    // Si no hay años aun (tabla vacía), creamos el año actual
-                    const currentYear = new Date().getFullYear().toString();
-                    rawData[currentYear] = [{ name: name, value: 0 }];
-                }
-            }
-
-            initData(); // Recalcular todo
+            if(!name) return alert("Falta nombre");
             
-            // Feedback
-            const prevText = els.btnSavePlayer.innerHTML;
-            els.btnSavePlayer.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> Guardado`;
-            els.btnSavePlayer.classList.add("bg-green-600");
-            setTimeout(() => {
-                els.btnSavePlayer.innerHTML = prevText;
-                els.btnSavePlayer.classList.remove("bg-green-600");
-                lucide.createIcons();
-            }, 1000);
-
+            PLAYER_COLORS[name] = els.editColorText.value;
+            if(els.editImage.value) PLAYER_IMAGES_SOURCES[name] = [els.editImage.value];
+            
+            if(!getAllPlayerNames().includes(name)) {
+                // Init new
+                const firstY = Object.keys(rawData).sort()[0] || new Date().getFullYear().toString();
+                if(!rawData[firstY]) rawData[firstY] = [];
+                rawData[firstY].push({name, value: 0});
+            }
+            
+            initData();
             editingPlayerName = name; 
             renderPlayerList(els.searchPlayer.value);
             
-            // Forzar render frame
-            barElements[name] = null;
-            els.chartContainer.innerHTML = '';
-            for (let key in barElements) delete barElements[key];
-            renderFrame();
+            // Visual feedback button
+            const oldTxt = els.btnSavePlayer.innerHTML;
+            els.btnSavePlayer.innerHTML = "Guardado";
+            setTimeout(() => els.btnSavePlayer.innerHTML = oldTxt, 1000);
         };
-
-        els.btnDownloadJson.onclick = () => {
-            els.jsonSection.classList.toggle("hidden");
-        };
-
-        // --- RENDERIZADO DEL CHART ---
-
-        function renderFrame() {
-            if (timeline.length === 0) return;
-            
-            const currentKey = timeline[currentIndex];
-            if (!currentKey) return; 
-            const items = [...denseData[currentKey]].sort((a, b) => b.value - a.value);
-            const maxValue = items.length > 0 ? items[0].value : 1;
-
-            els.yearDisplay.innerText = Math.floor(parseFloat(currentKey));
-            els.currentYearMini.innerText = Math.floor(parseFloat(currentKey));
-            els.timelineSlider.value = currentIndex;
-
-            const activeItems = items.slice(0, 10).map((item, index) => ({
-                ...item,
-                rank: index,
-                barWidth: (item.value / maxValue) * 100,
-                color: getPlayerColor(item.name),
-                imageUrl: getPlayerImageURL(item.name, 0)
-            }));
-            const activeNames = new Set(activeItems.map(i => i.name));
-
-            activeItems.forEach(item => {
-                let el = barElements[item.name];
-                if (!el) {
-                    el = document.createElement('div');
-                    el.className = "absolute left-6 right-6 flex items-center bar-transition";
-                    el.style.transitionDuration = `${frameDuration}ms`;
-                    
-                    el.innerHTML = `
-                        <div class="absolute -top-5 left-0 text-xs font-bold text-white drop-shadow-md truncate max-w-[200px] shadow-black" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">${item.name}</div>
-                        <div class="w-full h-10 relative flex items-center">
-                            <div class="bar-fill h-full rounded-r-full shadow-lg flex items-center pl-2 overflow-visible whitespace-nowrap relative bar-transition border border-white/40" style="transition-duration: ${frameDuration}ms;">
-                                <div class="party-logo-container w-10 h-10 rounded-full absolute -right-5 border-2 border-white shadow-md z-10 bg-white overflow-hidden hidden ring-2 ring-black/20">
-                                    <img src="" referrerpolicy="no-referrer" class="player-face w-full h-full" 
-                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                                        onload="this.style.display='block'; this.nextElementSibling.style.display='none';"
-                                    >
-                                    <div class="logo-fallback hidden" style="color:${getPlayerColor(item.name)}">${item.name.substring(0,2)}</div>
-                                </div>
-                            </div>
-                            <span class="value-label ml-2 text-sm font-bold text-white tabular-nums z-20 shadow-lg bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20">0</span>
-                        </div>
-                    `;
-                    els.chartContainer.appendChild(el);
-                    barElements[item.name] = el;
-                }
-
-                el.style.transitionDuration = `${frameDuration}ms`;
-                el.querySelector('.bar-fill').style.transitionDuration = `${frameDuration}ms`;
-                el.style.top = `${(item.rank * ROW_HEIGHT) + OFFSET_TOP}px`;
-                el.style.opacity = '1';
-                
-                const barFill = el.querySelector('.bar-fill');
-                barFill.style.width = `${Math.max(item.barWidth, 1)}%`;
-                barFill.style.backgroundColor = item.color;
-                barFill.style.backgroundImage = "linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 100%)";
-
-                const containerEl = el.querySelector('.party-logo-container');
-                const imgEl = containerEl.querySelector('img');
-                const fallbackEl = containerEl.querySelector('.logo-fallback');
-
-                // Update Image
-                if (item.imageUrl) {
-                    if (imgEl.dataset.src !== item.imageUrl) {
-                        imgEl.src = item.imageUrl;
-                        imgEl.dataset.src = item.imageUrl;
-                    }
-                    containerEl.classList.remove('hidden');
-                } else {
-                    imgEl.style.display = 'none';
-                    fallbackEl.style.display = 'flex';
-                    containerEl.classList.remove('hidden');
-                }
-                fallbackEl.style.color = item.color;
-
-                const valLabel = el.querySelector('.value-label');
-                valLabel.innerText = Math.round(item.value);
-            });
-
-            Object.keys(barElements).forEach(name => {
-                if (!activeNames.has(name)) {
-                    const el = barElements[name];
-                    el.style.opacity = '0';
-                    el.style.top = '600px'; 
-                }
-            });
-        }
-
-        function startGameLoop() {
-            if (intervalId) clearInterval(intervalId);
-            intervalId = setInterval(() => {
-                if (currentIndex < timeline.length - 1) {
-                    currentIndex++;
-                    renderFrame();
-                } else {
-                    pauseGame();
-                }
-            }, frameDuration);
-        }
-
-        function pauseGame() {
-            isPlaying = false;
-            clearInterval(intervalId);
-            updatePlayButton();
-        }
-
-        function updatePlayButton() {
-            if (isPlaying) {
-                els.playIcon.classList.add('hidden');
-                els.pauseIcon.classList.remove('hidden');
-            } else {
-                els.playIcon.classList.remove('hidden');
-                els.pauseIcon.classList.add('hidden');
-            }
-        }
-
-        function updateTransitionSpeed() {
-             Object.values(barElements).forEach(el => {
-                 el.style.transitionDuration = `${frameDuration}ms`;
-                 el.querySelector('.bar-fill').style.transitionDuration = `${frameDuration}ms`;
-             });
-             if (isPlaying) {
-                 startGameLoop();
-             }
-        }
-
-        els.playPauseBtn.addEventListener('click', () => {
-            if (currentIndex >= timeline.length - 1) {
-                currentIndex = 0;
-            }
-            isPlaying = !isPlaying;
-            updatePlayButton();
-            if (isPlaying) startGameLoop();
-            else clearInterval(intervalId);
-        });
-
-        els.resetBtn.addEventListener('click', () => {
-            pauseGame();
-            currentIndex = 0;
-            renderFrame();
-        });
-
-        els.timelineSlider.addEventListener('input', (e) => {
-            currentIndex = parseInt(e.target.value);
-            pauseGame();
-            renderFrame();
-        });
-
-        els.speedSelect.addEventListener('change', (e) => {
-            frameDuration = parseInt(e.target.value);
-            updateTransitionSpeed();
-        });
 
         els.toggleEditorBtn.addEventListener('click', () => {
             els.editorModal.classList.remove('hidden');
-            renderPlayerList(); 
-            if(!editingPlayerName) clearEditor(); 
+            renderPlayerList();
+            if(!editingPlayerName) clearEditor();
         });
+        els.closeEditorBtn.addEventListener('click', () => els.editorModal.classList.add('hidden'));
 
-        els.closeEditorBtn.addEventListener('click', () => {
-            els.editorModal.classList.add('hidden');
-        });
-
-        // Inicio
+        // Init
         renderColorPalette();
         lucide.createIcons();
-        initData(); // Inicia vacío
+        initData();
     </script>
 </body>
 </html>
